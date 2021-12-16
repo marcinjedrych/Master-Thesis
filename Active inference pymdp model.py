@@ -2,7 +2,7 @@
 """
 Created on Wed Dec  8 14:16:08 2021
 
-@author: Lenovo
+Script for active inference on two-armed bandit tak
 """
 
 
