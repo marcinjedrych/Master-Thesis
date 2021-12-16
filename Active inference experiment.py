@@ -126,48 +126,9 @@ my_agent = Agent(A = A, B = B, C = C, D = D)
 
 # class TwoArmedBandit(object):
 
-#   def __init__(self, context = None, p_hint = 1.0, p_reward = 0.8):
+#   def __init__(self, context = None, p_hint = None, pr = 0.6):
 
-#     self.context_names = ['123', '132','213','231','312','321']
+#     self.context_names = ['1','2','3']
+#    ......
 
-#     if context == None:
-#       self.context = self.context_names[utils.sample(np.array([0.33,0.33,0.33]))] # randomly sample which bandit arm is better (Left or Right)
-#     else:
-#       self.context = context
-
-#     self.p_reward = pr
-
-#     self.reward_obs_names = ['Small reward', 'Medium reward', 'Big reward']
-
-
-#   def step(self, action): 
-
-#     if action == "Move-start":
-#       observed_reward = "Null"
-#       observed_choice = "Start"
-#     elif action == "Chose 1":
-#       if self.context == "Left-Better":
-#         observed_hint = self.hint_obs_names[utils.sample(np.array([0.0, self.p_hint, 1.0 - self.p_hint]))]
-#       elif self.context == "Right-Better":
-#         observed_hint = self.hint_obs_names[utils.sample(np.array([0.0, 1.0 - self.p_hint, self.p_hint]))]
-#       observed_reward = "Null"
-#       observed_choice = "Hint"
-#     elif action == "Chose 2":
-#       observed_choice = "Left Arm"
-#       if self.context == "Left-Better":
-#         observed_reward = self.reward_obs_names[utils.sample(np.array([0.0, 1.0 - self.p_reward, self.p_reward]))]
-#       elif self.context == "Right-Better":
-#         observed_reward = self.reward_obs_names[utils.sample(np.array([0.0, self.p_reward, 1.0 - self.p_reward]))]
-#     elif action == "Chose 3":
-#       observed_hint = "Null"
-#       observed_choice = "Right Arm"
-#       if self.context == "Right-Better":
-#         observed_reward = self.reward_obs_names[utils.sample(np.array([0.0, 1.0 - self.p_reward, self.p_reward]))]
-#       elif self.context == "Left-Better":
-#         observed_reward = self.reward_obs_names[utils.sample(np.array([0.0, self.p_reward, 1.0 - self.p_reward]))]
-    
-#     obs = [observed_hint, observed_reward, observed_choice]
-
-#     return obs
-  
 
