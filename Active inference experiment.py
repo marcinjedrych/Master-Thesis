@@ -3,13 +3,14 @@
 Created on Tue Dec 14 19:39:29 2021
 
 @author: Marcin Jedrych
+
+Script for active inference on Irene's experiment
+There is a forced-choice task condition and a free-choice condition
+The participant has to chose between 3 decks of cards.
 """
 import pymdp
 import numpy as np
 from pymdp import utils
-
-# first forced choice task, then free choice task
-# chose 1,2 or 3
 
 #forced choice task
 #free choice task
