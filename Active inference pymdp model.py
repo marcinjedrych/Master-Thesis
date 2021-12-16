@@ -301,5 +301,3 @@ my_agent = Agent(A = A, B = B, C = C, D = D) # redefine the agent with the new p
 env = TwoArmedBandit(p_hint = 0.8, p_reward = 0.8) # re-initialize the environment -- this time, the hint is not always accurate (`p_hint = 0.8`)
 
 run_active_inference_loop(my_agent, env, T = T)
-
-#testtesttest
