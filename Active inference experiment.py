@@ -15,7 +15,7 @@ from pymdp import utils
 #free choice task
 
 #specify dimensionalities of hidden state factors, control factors and observation modalities
-context_names = ['123', '132','213','231','312','321'] #123 = 1 highest reward, 2 lower and 3 lowest reward
+context_names = ['1', '2','3'] #which deck has big reward
 choice_names = ['Start','Deck 1','Deck 2','Deck 3']
 
 """ Define `num_states` and `num_factors` below """
@@ -42,25 +42,24 @@ A = utils.obj_array( num_modalities )
 #reward modality
 pr = 0.6
 x = 1-pr
-
+y= (x/2)
 A_reward = np.zeros((len(reward_obs_names),len(context_names), len(choice_names)))
 for choice_id, choice_name in enumerate(choice_names):
     if choice_name == 'Start':
         A_reward[:3,:,choice_id] = 0
         
-    elif choice_name == 'Deck 1':
-        A_reward[:3,:,choice_id] = np.array([[x/2, x/2, x/2, pr, x/2, pr],
-                                              [x/2, x/2, pr, x/2, pr, x/2],
-                                                [pr, pr, x/2, x/2, x/2, x/2]])
-        
+    if choice_name == 'Deck 1':
+        A_reward[1:4,:,choice_id] = np.array([[y, x, x],
+                                              [y, x, x],
+                                                [pr, y, y]])
     elif choice_name == 'Deck 2':
-        A_reward[1:,:,choice_id] = np.array([[x/2, pr, x/2, x/2, pr, x/2],
-                                             [pr, x/2, x/2, x/2, x/2, pr],
-                                             [x/2, x/2, pr, pr, x/2, x/2]])
+        A_reward[1:,:,choice_id] = np.array([[x, y, x],
+                                              [x, y, x],
+                                              [y, pr, y]])
     elif choice_name == 'Deck 3':
-        A_reward[1:, :, choice_id] = np.array([[pr, x/2, pr, x/2, x/2, x/2],
-                                               [x/2, pr, x/2, pr, x/2, x/2],
-                                               [x/2, x/2, x/2, x/2, pr, pr]])
+        A_reward[1:, :, choice_id] = np.array([[x, x, y],
+                                               [x, x, y],
+                                               [y, y, pr]])
 A[0] = A_reward
 
 #choice observation modality
@@ -110,15 +109,15 @@ D[1] = D_choice
 
 print('-------------A')
 print(A)
-print('-------------B')
-print(B)
-print('-------------C')
-print(C)
-print('-------------D')
-print(D)
-print('-------------')
-print(f'Beliefs about which arm is better: {D[0]}')
-print(f'Beliefs about starting location: {D[1]}')
+# print('-------------B')
+# print(B)
+# print('-------------C')
+# print(C)
+# print('-------------D')
+# print(D)
+# print('-------------')
+# print(f'Beliefs about which arm is better: {D[0]}')
+# print(f'Beliefs about starting location: {D[1]}')
 
 
 from pymdp.agent import Agent
