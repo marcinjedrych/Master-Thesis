@@ -39,15 +39,11 @@ num_modalities = len(num_obs)
 
 A = utils.obj_array( num_modalities )
 
-prob_win = [0.5, 0.5, 0.7] # what is the probability of win
+prob_win = [0.33, 0.33, 0.33] # what is the probability of win for each deck
 
 p_D1 = 0.55
 p_D2 = 0.55
 p_D3 = 0.55
-
-# hier ben ik niet zeker over maar anders krijg ik de error dat A-matrix niet genormaliseerd is
-k = (1- p_D1)/2
-l = p_D1/2
 
 A_behavior = np.zeros((len(behavior_obs_names), len(context_names), len(choice_names)))
 
@@ -58,19 +54,18 @@ for choice_id, choice_name in enumerate(choice_names):
     if choice_name == 'Start':
 
         A_behavior[0,:,choice_id] = 1.0
-    
-    #dit klopt nog niet
+
     elif choice_name == 'ChD1':
         
-        A_behavior[1:,:,choice_id] = np.array([ [p_D1, k , k], [1-p_D1, l, l]])
+        A_behavior[1:,:,choice_id] = np.array([ [p_D1, 0 , 0], [1-p_D1, 1, 1]])
     
     elif choice_name == 'ChD2':
         
-        A_behavior[1:,:,choice_id] = np.array([ [k, p_D2, k], [l, 1-p_D2, l]])
+        A_behavior[1:,:,choice_id] = np.array([ [0, p_D2, 0], [1, 1-p_D2, 1]])
     
     elif choice_name == 'ChD3':
         
-        A_behavior[1:,:,choice_id] = np.array([ [k, k, p_D3], [l, l, 1-p_D3]])
+        A_behavior[1:,:,choice_id] = np.array([ [0, 0, p_D3], [1, 1, 1-p_D3]])
         
   
 A[0] = utils.norm_dist(A_behavior)
@@ -124,7 +119,7 @@ D[1] = D_choice
 
 my_agent = Agent(A = A, B = B, C = C, D = D)
 
-class Knowthyself(object):
+class omgeving(object):
 
   def __init__(self, context = None, p_consist = 0.8):
 
@@ -145,8 +140,7 @@ class Knowthyself(object):
     if action == "Start":
       observed_behavior = "Null"
       observed_choice   = "Start"
-	
-    #dit klopt nog niet
+
     elif action == "ChD1":
       observed_choice = "ChD1"
       if self.context == "D1":
@@ -212,7 +206,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
   return 'test'
 
 p_consist = 0.9 # This is how consistent behavior is with actual character
-env = Knowthyself(p_consist = p_consist)
+env = omgeving(p_consist = p_consist)
 
 T = 24
 
