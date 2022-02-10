@@ -205,24 +205,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
   print("Q = ", qs[0]) 
   return 'test'
 
-p_consist = 0.9 # This is how consistent behavior is with actual character
+p_consist = 0.8 # This is how consistent behavior is with actual character
 env = omgeving(p_consist = p_consist)
-
-T = 24
-
-my_agent = Agent(A = A, B = B, C = C, D = D) # redefine the agent with the new preferences
-
+T = 12
 entr = run_active_inference_loop(my_agent, env, T = T)
-
-
-if verbose:
-	print('----------------A')
-	print(A)
-	print('----------------B')
-	print(B)
-	print('----------------C')
-	print(C)
-	print('----------------D')
-	print(D)
-
-my_agent = Agent(A = A, B = B, C = C, D = D) # redefine the agent with the new preferences
