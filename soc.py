@@ -190,7 +190,9 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
     choice_action = choice_action_names[movement_id]
 
     obs_label = my_env.step(choice_action)
-
+    print('observed behavior:', obs_label[0])
+    print('observed choice:', obs_label[1])
+    
     obs = [behavior_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
     print(obs)
 
