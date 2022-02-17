@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-A simulation of the experiment with 3 state factors. (only with  decks)
+A simulation of the experiment with 3 state factors. (only with 2 decks)
 
 Created on Tue Feb 17 12:11:06 2022
-@author: Lenovo
+@author: Marcin Jedrych
 """
 
 import numpy as np
@@ -84,19 +84,19 @@ B = utils.obj_array(num_factors)
 
 B_context1 = np.zeros( (len(D1_names), len(D1_names), len(context_action_names))) 
 
-B_context1[:,:,0] = np.eye( len(D1_names))
+B_context1[:,:,0] = np.eye(len(D1_names))
 
 B[0] = B_context1
 
 
-B_context2 = np.zeros( (len(D2_names), len(D2_names), len(context_action_names))) 
+B_context2 = np.zeros((len(D2_names), len(D2_names), len(context_action_names))) 
 
 B_context2[:,:,0] = np.eye( len(D1_names))
 
 B[1] = B_context2
 
 
-B_choice = np.zeros( (len(choice_names), len(choice_names), len(choice_action_names)) )
+B_choice = np.zeros((len(choice_names), len(choice_names), len(choice_action_names)))
 
 for choice_i in range(len(choice_names)):
   
