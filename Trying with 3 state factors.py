@@ -79,7 +79,7 @@ for choice_id in range(len(choice_names)):
 
 A[1] = A_choice
 
-##B
+##B (3 arrays because 3 state factors?)
 B = utils.obj_array(num_factors)
 
 B_context1 = np.zeros( (len(D1_names), len(D1_names), len(context_action_names))) 
@@ -117,6 +117,7 @@ C[0][2] = 0.4
 D = utils.obj_array(num_factors)
 D_context1 = np.array([0.5,0.5])
 D_context2 = np.array([0.5,0.5])
+#high and low reward equaly likely for both decks in start.^
 
 D[0] = D_context1
 D[1] = D_context2
@@ -166,13 +167,6 @@ class omgeving(object):
         observed_behavior = self.behavior_obs_names[utils.sample(np.array([0.0, self.p_consist, 1 - self.p_consist]))]
       else:
         observed_behavior = self.behavior_obs_names[utils.sample(np.array([0.0, 1 - self.p_consist, self.p_consist]))]
-        
-    # elif action == "ChD3":
-    #   observed_choice = "ChD3"
-    #   if self.context == "D3":
-    #     observed_behavior = self.behavior_obs_names[utils.sample(np.array([0.0, self.p_consist, 1 - self.p_consist]))]
-    #   elif self.context in ("D1","D2"):
-    #     observed_behavior = self.behavior_obs_names[utils.sample(np.array([0.0, 1 - self.p_consist, self.p_consist]))]
     
     obs = [observed_behavior, observed_choice]
 
@@ -197,28 +191,27 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
         choice_action = 'ChD1'
     else:
         chosen_action_id = my_agent.sample_action()
-        print('chosen action id',chosen_action_id )
+        #print('chosen action id',chosen_action_id )
     
         movement_id = int(chosen_action_id[2])
-        print("movement id", movement_id , '\n')
+        #print("movement id", movement_id , '\n')
         
         choice_action = choice_action_names[movement_id]
-        print("choice action", choice_action, '\n')
+        #print("choice action", choice_action, '\n')
 
     obs_label = my_env.step(choice_action)
-    print("obslabel", obs_label, '\n')
+    #print("obslabel", obs_label, '\n')
 
     obs = [behavior_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
-    print("obs", obs, '\n')
+    #print("obs", obs, '\n')
 
     print(f'Action at time {t}: {choice_action}')
-    print(f'Behavior at time {t}: {obs_label[0]}')
-    
-  print("Q = ", qs[0]) 
-  return 'test'
+    print(f'Behavior at time {t}: {obs_label[0]}' +'\n')
+     
+  return ent
 
 p_consist = 0.8 # This is how consistent behavior is with actual character
 env = omgeving(p_consist = p_consist)
-T = 12
+T = 20
 entr = run_active_inference_loop(my_agent, env, T = T)
 
