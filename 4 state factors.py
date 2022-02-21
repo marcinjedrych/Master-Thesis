@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Feb 21 11:49:03 2022
-
-@author: Lenovo
-"""
-
-# -*- coding: utf-8 -*-
 """
 A simulation of the experiment with 4 state factors. (with 3 decks)
 
@@ -49,7 +41,7 @@ num_modalities = len(num_obs)
 
 A = utils.obj_array( num_modalities )
 
-prob_win = [0.5,0.5] # what is the probability of win for each deck
+prob_win = [0.5,0.5] # what is the probability of high and low reward for each deck
 
 H1 = 0.55
 H2 = 0.6
@@ -63,6 +55,7 @@ A_behavior = np.zeros((len(behavior_obs_names), len(D1_names), len(D2_names),len
 # 4x2x2x2x4 = 128 cells
 A_choice = np.zeros((len(choice_obs_names), len(D1_names), len(D2_names),len(D3_names), len(choice_names)))
 
+#with probabilities in each cell
 for choice_id, choice_name in enumerate(choice_names):
     
     if choice_name == 'Start':
@@ -88,7 +81,7 @@ for choice_id, choice_name in enumerate(choice_names):
         A_behavior[2,:,:,:,choice_id] = np.array([[[(1-C)*H1*H2*H3,C*H1*H2*(1-H3)],[(1-C)*H1*(1-H2)*H3, C*H1*(1-H2)*(1-H3)]], [[(1-C)*(1-H1)*H2*H3, C*(1-H1)*H2*(1-H3)],[(1-C)*(1-H1)*(1-H2)*H3, C*(1-H1)*(1-H2)*(1-H3)]]])
     
         
-#dit is waarschijnlijk verkeerd, nog bekijken.^
+#niet zeker of dit juist is^
 
   
 A[0] = utils.norm_dist(A_behavior)
@@ -101,7 +94,7 @@ for choice_id in range(len(choice_names)):
 
 A[1] = A_choice
 
-##B (3 arrays because 3 state factors?)
+##B (4 arrays because 4 state factors?)
 B = utils.obj_array(num_factors)
 
 B_context1 = np.zeros( (len(D1_names), len(D1_names), len(context_action_names))) 
@@ -249,6 +242,6 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
 
 p_consist = 0.8 # This is how consistent behavior is with actual character
 env = omgeving(p_consist = p_consist)
-T = 200
+T = 20
 entr = run_active_inference_loop(my_agent, env, T = T)
 
