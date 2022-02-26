@@ -188,7 +188,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
   
   for t in range(T):
     qs = my_agent.infer_states(obs)  # agent changes beliefs about states based on observation
-    print("Beliefs about the decks reward: Deck1 =", qs[0],"Deck2 =", qs[1])
+    print("Beliefs about the decks reward: D1 =", qs[0],"D2 =", qs[1])
 
     q_pi, efe = my_agent.infer_policies() #based on beliefs agent gives value to actions
     print('EFE for each action:', efe)  #[Start, ChD1, ChD2]
