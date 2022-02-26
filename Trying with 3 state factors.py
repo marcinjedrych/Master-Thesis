@@ -182,8 +182,9 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
   obs_label = ["Null", "Start"]  # agent observes a `Null` reward, and seeing itself in the `Start` location
   obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
   print('Initial observation:',obs)
-  
-  ent = np.zeros((T, num_factors))
+  chosendecks = ["Start"]
+  HL = [obs_label[0]]
+  #ent = np.zeros((T, num_factors))
   
   for t in range(T):
     qs = my_agent.infer_states(obs)  # agent changes beliefs about states based on observation
@@ -204,7 +205,8 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
          
         choice_action = choice_action_names[movement_id]
         print("Chosen action:", choice_action)
-
+    
+    chosendecks.append(choice_action)
     obs_label = my_env.step(choice_action)
     #print("obslabel", obs_label)
 
@@ -212,11 +214,31 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
 
     print(f'Action at time {t}: {choice_action}')
     print(f'Reward at time {t}: {obs_label[0]}')
+    HL.append(obs_label[0][0])
     print(f'New observation:',choice_action,'&', reward_obs_names[obs[0]] + ' reward', '\n')
     
-  return ent
+  return (chosendecks, HL)
 
 p_consist = 0.8 # This is how consistent reward is with actual
 env = omgeving(p_consist = p_consist)
-T = 20
+T = 25
+
+timepoints = [0]
+for t in range(T):
+    timepoints.append(t)
+    
 entr = run_active_inference_loop(my_agent, env, T = T)
+#(entr[0] = list with chosen decks, entr[1] = list with H or L reward)
+
+#This shows which deck the agent is chosing over time and which reward the agent gets at each timepoint
+plt.scatter(timepoints, entr[0])
+for i, txt in enumerate(entr[1]):
+    plt.annotate(txt, (timepoints[i], entr[0][i]))    
+plt.plot(timepoints, entr[0])
+plt.title('Behavior of the model')
+plt.ylabel('Which deck?')
+plt.xlabel('Time')
+plt.text(x = -1.25,y = 2.13,s = 'H = High reward' + '\n' + 'L = Low Reward')
+plt.show()
+
+#First agent is in 'Start', next there are 6 forced choices followed by free choice trials.
