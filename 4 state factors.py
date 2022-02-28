@@ -44,12 +44,12 @@ A = utils.obj_array( num_modalities )
 prob_win = [0.5,0.5] # what is the probability of high and low reward for each deck
 
 #kansen volgens het geenertieve model
-pH1_G = 0.55 #kans om high reward te zien als deck 1 goed is
-pH1_B = 0.6  #kans om high reward te zien als deck 1 slecht is
-pH2_G = 0.55  #kans om high reward te zien als deck 2 goed is
-pH2_B = 0.6  #kans om high reward te zien als deck 2 slecht is
-pH3_G = 0.55  #kans om high reward te zien als deck 3 goed is
-pH3_B = 0.6  #kans om high reward te zien als deck 3 slecht is
+pH1_G = 0.7 #kans om high reward te zien als deck 1 goed is
+pH1_B = 0.4 #kans om high reward te zien als deck 1 slecht is
+pH2_G = 0.7  #kans om high reward te zien als deck 2 goed is
+pH2_B = 0.4 #kans om high reward te zien als deck 2 slecht is
+pH3_G = 0.7  #kans om high reward te zien als deck 3 goed is
+pH3_B = 0.4  #kans om high reward te zien als deck 3 slecht is
 
 # 3x2x2x2x4 =  96 cells
 A_reward = np.zeros((len(reward_obs_names), len(D1_names), len(D2_names),len(D3_names), len(choice_names)))
