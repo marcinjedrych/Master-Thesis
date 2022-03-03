@@ -53,7 +53,7 @@ pH2_B = 0.4 #chance to see high reward if deck 2 is bad
 pH3_G = 0.7  #chance to see high reward is deck 3 is good
 pH3_B = 0.4  #chance to see high reward if deck 3 is bad
 
-# 3x2x2x2x4 =  96 cells
+# 3x2x2x2x4 = 96 cells
 A_reward = np.zeros((len(reward_obs_names), len(D1_names), len(D2_names),len(D3_names), len(choice_names)))
 
 # 4x2x2x2x4 = 128 cells
@@ -97,7 +97,7 @@ A[1] = A_choice
 ##B (4 arrays because 4 state factors)
 B = utils.obj_array(num_factors)
 
-B_context1 = np.zeros( (len(D1_names), len(D1_names), len(context_action_names))) 
+B_context1 = np.zeros((len(D1_names), len(D1_names), len(context_action_names))) 
 B_context1[:,:,0] = np.eye(len(D1_names))
 B[0] = B_context1
 
