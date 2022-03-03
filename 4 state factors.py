@@ -66,7 +66,8 @@ for choice_id, choice_name in enumerate(choice_names):
 
     elif choice_name == 'ChD1':
         
-        for loop in range(2):
+        for loop in range(2): # TV: dit is fout; je neemt een slice over 3 dimensions (nl 1:, :, :) terwijl je een slice over 2 dim moet nemen
+							# kan je oplossen door 2 loops te nemen ipv 1	
             A_reward[1:,:,:,loop,choice_id] = np.array([[pH1_G,pH1_B],[1-pH1_G,1-pH1_B]])
         
     elif choice_name == 'ChD2':

@@ -3,7 +3,8 @@
 A simulation of the experiment with 3 state factors. (only with 2 decks)
 
 Created on Tue Feb 26 13:18:06 2022
-@author: Marcin Jedrych
+@author: Marcin Jedrych & Tom Verguts, 
+based on earlier scripts from pymdp website https://github.com/infer-actively/pymdp
 """
 
 import numpy as np
@@ -42,7 +43,11 @@ num_modalities = len(num_obs)
 A = utils.obj_array( num_modalities )
 
 prob_win = [0.5,0.5] # what is the probability of win for each deck (volgens het generatieve process)
+# TV: element 0 is prob(high reward) als een deck goed is? en element 1 is prob(high reward) als een deck slecht is?
+# TV: dus dan is de werkelijkheid minder gesofistikeerd dan het model (dat immers 4 ipv 2 parameters heeft).
+# TV: meestal is het omgekeerd... (of zijn ze even gesofistikeerd)
 
+# TV: beter comments ih engels, is makkelijker om later te delen...
 #kansen volgens het geenertieve model
 pH1_G = 0.7 #kans om high reward te zien als deck 1 goed is
 pH1_B = 0.4  #kans om high reward te zien als deck 1 slecht is
@@ -68,10 +73,11 @@ for choice_id, choice_name in enumerate(choice_names):
     
     elif choice_name == 'ChD2':
         
-        for loop in range(2):
+        for loop in range(2): # TV: geen goede gewoonte om hier 2 te schrijven.. beter de variabele, dan blijft het overzichtelijk (en scalable)
             A_reward[1:,loop,:, choice_id] = np.array([[pH2_G,pH2_B],[1-pH2_G,1-pH2_B]])
 
-A[0] = utils.norm_dist(A_reward)
+A[0] = utils.norm_dist(A_reward) #TV: waaarom niet A[0] = A_reward
+
 
 A_choice = np.zeros((len(choice_obs_names), len(D1_names), len(D2_names), len(choice_names)))
 
@@ -81,7 +87,7 @@ for choice_id in range(len(choice_names)):
 
 A[1] = A_choice
 
-##B (3 arrays because 3 state factors?)
+##B (3 arrays because 3 state factors?) TV: ja
 B = utils.obj_array(num_factors)
 
 B_context1 = np.zeros( (len(D1_names), len(D1_names), len(context_action_names))) 
@@ -102,7 +108,7 @@ B_choice = np.zeros((len(choice_names), len(choice_names), len(choice_action_nam
 
 for choice_i in range(len(choice_names)):
   
-  B_choice[choice_i, :, choice_i] = 1.0 # you can observe your actions without ambiguity
+  B_choice[choice_i, :, choice_i] = 1.0 # you can observe your actions without ambiguity # TV: this is not about observation, but about control
 
 B[2] = B_choice
 
@@ -183,7 +189,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
   obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
   print('Initial observation:',obs)
   chosendecks = ["Start"]
-  HL = [obs_label[0]]
+  HL = [obs_label[0]] # TV: HL is geen duidelijke naam.. ik weet niet wat dit betekent.
   #ent = np.zeros((T, num_factors))
   
   for t in range(T):
