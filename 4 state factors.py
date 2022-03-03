@@ -98,63 +98,48 @@ A[1] = A_choice
 B = utils.obj_array(num_factors)
 
 B_context1 = np.zeros( (len(D1_names), len(D1_names), len(context_action_names))) 
-
 B_context1[:,:,0] = np.eye(len(D1_names))
-
 B[0] = B_context1
 
-
 B_context2 = np.zeros((len(D2_names), len(D2_names), len(context_action_names))) 
-
 B_context2[:,:,0] = np.eye( len(D2_names))
-
 B[1] = B_context2
 
-B_context3 = np.zeros((len(D3_names), len(D3_names), len(context_action_names))) 
-
+B_context3 = np.zeros((len(D3_names), len(D3_names), len(context_action_names)))
 B_context3[:,:,0] = np.eye( len(D3_names))
-
 B[2] = B_context3
 
 B_choice = np.zeros((len(choice_names), len(choice_names), len(choice_action_names)))
 
 for choice_i in range(len(choice_names)):
-  
+    
   B_choice[choice_i, :, choice_i] = 1.0 ##
 
 B[3] = B_choice
 
 ##C
-
 from pymdp.maths import softmax
-
 C = utils.obj_array_zeros([3, 4])
 C[0][1] = 0.8 #higher preference for high reward
 C[0][2] = 0.4
 
-
-##D
+##D     high and low reward equaly likely for all decks in start.
 D = utils.obj_array(num_factors)
 D_context1 = np.array([0.5,0.5])
 D_context2 = np.array([0.5,0.5])
 D_context3 = np.array([0.5,0.5])
-#high and low reward equaly likely for all decks in start.^
 
 D[0] = D_context1
 D[1] = D_context2
 D[2] = D_context3
 
 D_choice = np.zeros(len(choice_names))
-
 D_choice[choice_names.index("Start")] = 1.0
-
 D[3] = D_choice
 
 ############################################
 
 my_agent = Agent(A = A, B = B, C = C, D = D)
-
-print(my_agent.infer_policies()) 
 
 class omgeving(object):
 
@@ -168,6 +153,7 @@ class omgeving(object):
   def step(self, action):
 
     if action == "Start":
+        
       observed_reward = "Null"
       observed_choice   = "Start"
 
@@ -175,6 +161,7 @@ class omgeving(object):
         
       self.context = self.context_names[utils.sample(np.array(prob_win1))]
       observed_choice = "ChD1"
+      
       if self.context == "High":
         observed_reward = self.reward_obs_names[utils.sample(np.array([0.0, self.p_consist, 1 - self.p_consist]))]
       else:
@@ -184,6 +171,7 @@ class omgeving(object):
         
       self.context = self.context_names[utils.sample(np.array(prob_win2))] 
       observed_choice = "ChD2"
+      
       if self.context == "High":
         observed_reward = self.reward_obs_names[utils.sample(np.array([0.0, self.p_consist, 1 - self.p_consist]))]
       else:
@@ -193,6 +181,7 @@ class omgeving(object):
         
       self.context = self.context_names[utils.sample(np.array(prob_win3))]
       observed_choice = "ChD3"
+      
       if self.context == "High":
         observed_reward = self.reward_obs_names[utils.sample(np.array([0.0, self.p_consist, 1 - self.p_consist]))]
       else:
@@ -217,7 +206,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
     print("Beliefs about the decks reward:", qs[0], qs[1], qs[2])
 
     q_pi, efe = my_agent.infer_policies() #based on beliefs agent gives value to actions
-    print('EFE for each action:', efe)  #[Start, ChD1, ChD2]
+    print('EFE for each action:', efe)
     
     ##forced choice trials
     if t < 6:
@@ -233,7 +222,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
         print("Chosen action:", choice_action)
     
     chosendecks.append(choice_action)
-    obs_label = my_env.step(choice_action)
+    obs_label = my_env.step(choice_action) #use step methode in 'omgeving' to generate new observation
     obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
 
     print(f'Action at time {t}: {choice_action}')
