@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 A simulation of the experiment with 3 state factors. (only with 2 decks)
-
 Created on Tue Feb 26 13:18:06 2022
 @author: Marcin Jedrych
 """

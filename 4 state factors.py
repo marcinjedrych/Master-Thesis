@@ -35,23 +35,22 @@ choice_obs_names = ['Start', 'ChD1', 'ChD2','ChD3']
 num_obs = [len(reward_obs_names), len(choice_obs_names)]
 num_modalities = len(num_obs)
 
-
 ########
 ##A
 
 A = utils.obj_array( num_modalities )
 
 prob_win1 = [0.5,0.5] # what is the probability of high and low reward for deck1
-prob_win2 = [0.7,0.3] # what is the probability of high and low reward for deck2
-prob_win3 = [0.3,0.7] # what is the probability of high and low reward for deck3
+prob_win2 = [0.8,0.2] # what is the probability of high and low reward for deck2
+prob_win3 = [0.2,0.8] # what is the probability of high and low reward for deck3
 
 #probabilities according to the generative model
-pH1_G = 0.7 #chance to see high reward if deck 1 is good
-pH1_B = 0.4 #chance to see high reward if deck 1 is bad
-pH2_G = 0.7  #chance to see high reward if deck 2 is good
-pH2_B = 0.4 #chance to see high reward if deck 2 is bad
-pH3_G = 0.7  #chance to see high reward is deck 3 is good
-pH3_B = 0.4  #chance to see high reward if deck 3 is bad
+pH1_G = 0.8 #chance to see high reward if deck 1 is good
+pH1_B = 0.2 #chance to see high reward if deck 1 is bad
+pH2_G = 0.8  #chance to see high reward if deck 2 is good
+pH2_B = 0.2 #chance to see high reward if deck 2 is bad
+pH3_G = 0.8  #chance to see high reward is deck 3 is good
+pH3_B = 0.2  #chance to see high reward if deck 3 is bad
 
 # 3x2x2x2x4 = 96 cells
 A_reward = np.zeros((len(reward_obs_names), len(D1_names), len(D2_names),len(D3_names), len(choice_names)))
@@ -233,7 +232,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
 
 p_consist = 0.8 # This is how consistent reward is with actual
 env = omgeving(p_consist = p_consist)
-T = 50
+T = 20
 
 timepoints = [0]
 for t in range(T):
