@@ -41,16 +41,16 @@ num_modalities = len(num_obs)
 A = utils.obj_array( num_modalities )
 
 prob_win1 = [0.5,0.5] # what is the probability of high and low reward for deck1
-prob_win2 = [0.8,0.2] # what is the probability of high and low reward for deck2
-prob_win3 = [0.2,0.8] # what is the probability of high and low reward for deck3
+prob_win2 = [0.7,0.3] # what is the probability of high and low reward for deck2
+prob_win3 = [0.3,0.7] # what is the probability of high and low reward for deck3
 
 #probabilities according to the generative model
-pH1_G = 0.8 #chance to see high reward if deck 1 is good
-pH1_B = 0.2 #chance to see high reward if deck 1 is bad
-pH2_G = 0.8  #chance to see high reward if deck 2 is good
-pH2_B = 0.2 #chance to see high reward if deck 2 is bad
-pH3_G = 0.8  #chance to see high reward is deck 3 is good
-pH3_B = 0.2  #chance to see high reward if deck 3 is bad
+pH1_G = 0.5 #chance to see high reward if deck 1 is good
+pH1_B = 0.5 #chance to see high reward if deck 1 is bad
+pH2_G = 0.7  #chance to see high reward if deck 2 is good
+pH2_B = 0.3 #chance to see high reward if deck 2 is bad
+pH3_G = 0.3  #chance to see high reward is deck 3 is good
+pH3_B = 0.7  #chance to see high reward if deck 3 is bad
 
 # 3x2x2x2x4 = 96 cells
 A_reward = np.zeros((len(reward_obs_names), len(D1_names), len(D2_names),len(D3_names), len(choice_names)))
@@ -142,11 +142,10 @@ my_agent = Agent(A = A, B = B, C = C, D = D)
 
 class omgeving(object):
 
-  def __init__(self, context = None, p_consist = 0.8):
+  def __init__(self, context = None):
 
     self.context_names = ['High','Low']
     self.context = context
-    self.p_consist = p_consist
     self.reward_obs_names = ['Null', 'High', 'Low']
 
   def step(self, action):
@@ -162,9 +161,9 @@ class omgeving(object):
       observed_choice = "ChD1"
       
       if self.context == "High":
-        observed_reward = self.reward_obs_names[utils.sample(np.array([0.0, self.p_consist, 1 - self.p_consist]))]
+        observed_reward = self.reward_obs_names[utils.sample(np.array([0, 1, 0]))]
       else:
-        observed_reward = self.reward_obs_names[utils.sample(np.array([0.0, 1 - self.p_consist, self.p_consist]))]
+        observed_reward = self.reward_obs_names[utils.sample(np.array([0, 0, 1]))]
     
     elif action == "ChD2":
         
@@ -172,9 +171,9 @@ class omgeving(object):
       observed_choice = "ChD2"
       
       if self.context == "High":
-        observed_reward = self.reward_obs_names[utils.sample(np.array([0.0, self.p_consist, 1 - self.p_consist]))]
+        observed_reward = self.reward_obs_names[utils.sample(np.array([0, 1, 0]))]
       else:
-        observed_reward = self.reward_obs_names[utils.sample(np.array([0.0, 1 - self.p_consist, self.p_consist]))]
+        observed_reward = self.reward_obs_names[utils.sample(np.array([0, 0, 1]))]
    
     elif action == "ChD3":
         
@@ -182,9 +181,9 @@ class omgeving(object):
       observed_choice = "ChD3"
       
       if self.context == "High":
-        observed_reward = self.reward_obs_names[utils.sample(np.array([0.0, self.p_consist, 1 - self.p_consist]))]
+        observed_reward = self.reward_obs_names[utils.sample(np.array([0, 1, 0]))]
       else:
-        observed_reward = self.reward_obs_names[utils.sample(np.array([0.0, 1 - self.p_consist, self.p_consist]))]
+        observed_reward = self.reward_obs_names[utils.sample(np.array([0, 0, 1]))]
     
     obs = [observed_reward, observed_choice]
 
@@ -230,9 +229,8 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
     print(f'New observation:',choice_action,'&', reward_obs_names[obs[0]] + ' reward', '\n')
   return chosendecks, High_or_Low
 
-p_consist = 0.8 # This is how consistent reward is with actual
-env = omgeving(p_consist = p_consist)
-T = 20
+env = omgeving()
+T = 50
 
 timepoints = [0]
 for t in range(T):
