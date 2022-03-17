@@ -119,10 +119,10 @@ B[3] = B_choice
 ##C
 from pymdp.maths import softmax
 C = utils.obj_array_zeros([3, 4])
-C[0][1] = 0.5 #higher preference for high reward
+C[0][1] = 0.7 #higher preference for high reward
 C[0][2] = 0.2
-rewval = C[0][1] - C[0][2]
-infoval = 1-rewval
+rewval = C[0][1] - C[0][2] #a value for reward
+infoval = 1-rewval #a value for information
 
 ##D     high and low reward equaly likely for all decks in start.
 D = utils.obj_array(num_factors)
@@ -152,36 +152,29 @@ class omgeving(object):
 
   def step(self, action):
 
-    if action == "Start":
-        
+    if action == "Start": 
       observed_reward = "Null"
       observed_choice   = "Start"
 
     elif action == "ChD1":
-        
       self.context = self.context_names[utils.sample(np.array(prob_win1))]
       observed_choice = "ChD1"
-      
       if self.context == "High":
         observed_reward = "High"
       else:
         observed_reward = "Low"
         
     elif action == "ChD2":
-        
       self.context = self.context_names[utils.sample(np.array(prob_win2))] 
       observed_choice = "ChD2"
-      
       if self.context == "High":
         observed_reward = "High"
       else:
         observed_reward = "Low"
    
     elif action == "ChD3":
-        
       self.context = self.context_names[utils.sample(np.array(prob_win3))]
       observed_choice = "ChD3"
-      
       if self.context == "High":
         observed_reward = "High"
       else:
@@ -192,6 +185,7 @@ class omgeving(object):
     return obs
 
 deck1,deck2,deck3 = [],[],[]
+
 def run_active_inference_loop(my_agent, my_env, T = 5):
 
   """ Initialize the first observation """
@@ -234,7 +228,6 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
             changes += 1
             prev_action = choice_action
         
-    
     chosendecks.append(choice_action)
     obs_label = my_env.step(choice_action) #use step methode in 'omgeving' to generate new observation
     obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
@@ -243,9 +236,10 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
     print(f'Reward at time {t}: {obs_label[0]}')
     High_or_Low.append(obs_label[0][0])
     print(f'New observation:',choice_action,'&', reward_obs_names[obs[0]] + ' reward', '\n')
+    
   return chosendecks, High_or_Low, changes
 
-env = omgeving()
+env = omgeving() #environment
 T = 50
 
 timepoints = [0]
@@ -285,7 +279,7 @@ plt.title('Belief about high reward chance')
 plt.show()
 
 print('value of reward =', rewval) #difference between high and low reward in C[0]
-print('value of information =', infoval) #1- value of reward
+print('value of information =', infoval) #1- value of reward (probably not correct)
 print('amount of changes =', changes) #amount of times that agent changes it's action/chosing another deck.
 
 #when smaller value of reward/ smaller difference between C[0][1] and C[0][2] --> more changes, more exploration / higher information value
