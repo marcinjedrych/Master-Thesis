@@ -267,7 +267,7 @@ plt.text(x = -1.25,y = 2.13,s = 'H = High reward' + '\n' + 'L = Low Reward')
 #plt.show()
 
 
-#plotting beliefs (high reward)
+#plotting beliefs (about high reward) over time
 d1h,d2h,d3h =[0],[0],[0]
 for i in deck1:
     d1h.append(i[0])
@@ -284,9 +284,11 @@ plt.legend()
 plt.title('Belief about high reward chance')
 plt.show()
 
-print('value of reward =', rewval)
-print('value of information =', infoval)
-print('amount of changes =', changes)
+print('value of reward =', rewval) #difference between high and low reward in C[0]
+print('value of information =', infoval) #1- value of reward
+print('amount of changes =', changes) #amount of times that agent changes it's action/chosing another deck.
+
+#when smaller value of reward/ smaller difference between C[0][1] and C[0][2] --> more changes, more exploration / higher information value
 
     
     
