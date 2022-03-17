@@ -40,17 +40,17 @@ num_modalities = len(num_obs)
 
 A = utils.obj_array( num_modalities )
 
-prob_win1 = [0.5,0.5] # what is the probability of high and low reward for deck1
-prob_win2 = [0.7,0.3] # what is the probability of high and low reward for deck2
-prob_win3 = [0.3,0.7] # what is the probability of high and low reward for deck3
+prob_win1 = [0.6,0.4] # what is the probability of high and low reward for deck1
+prob_win2 = [0.8,0.2] # what is the probability of high and low reward for deck2
+prob_win3 = [0.4,0.6] # what is the probability of high and low reward for deck3
 
 #probabilities according to the generative model
-pH1_G = 0.5 #chance to see high reward if deck 1 is good
-pH1_B = 0.5 #chance to see high reward if deck 1 is bad
-pH2_G = 0.7  #chance to see high reward if deck 2 is good
-pH2_B = 0.3 #chance to see high reward if deck 2 is bad
-pH3_G = 0.3  #chance to see high reward is deck 3 is good
-pH3_B = 0.7  #chance to see high reward if deck 3 is bad
+pH1_G = 0.8 #chance to see high reward if deck 1 is good
+pH1_B = 0.2 #chance to see high reward if deck 1 is bad
+pH2_G = 0.8  #chance to see high reward if deck 2 is good
+pH2_B = 0.2 #chance to see high reward if deck 2 is bad
+pH3_G = 0.8  #chance to see high reward is deck 3 is good
+pH3_B = 0.2 #chance to see high reward if deck 3 is bad
 
 # 3x2x2x2x4 = 96 cells
 A_reward = np.zeros((len(reward_obs_names), len(D1_names), len(D2_names),len(D3_names), len(choice_names)))
@@ -119,8 +119,10 @@ B[3] = B_choice
 ##C
 from pymdp.maths import softmax
 C = utils.obj_array_zeros([3, 4])
-C[0][1] = 0.8 #higher preference for high reward
-C[0][2] = 0.4
+C[0][1] = 0.5 #higher preference for high reward
+C[0][2] = 0.2
+rewval = C[0][1] - C[0][2]
+infoval = 1-rewval
 
 ##D     high and low reward equaly likely for all decks in start.
 D = utils.obj_array(num_factors)
@@ -161,19 +163,19 @@ class omgeving(object):
       observed_choice = "ChD1"
       
       if self.context == "High":
-        observed_reward = self.reward_obs_names[utils.sample(np.array([0, 1, 0]))]
+        observed_reward = "High"
       else:
-        observed_reward = self.reward_obs_names[utils.sample(np.array([0, 0, 1]))]
-    
+        observed_reward = "Low"
+        
     elif action == "ChD2":
         
       self.context = self.context_names[utils.sample(np.array(prob_win2))] 
       observed_choice = "ChD2"
       
       if self.context == "High":
-        observed_reward = self.reward_obs_names[utils.sample(np.array([0, 1, 0]))]
+        observed_reward = "High"
       else:
-        observed_reward = self.reward_obs_names[utils.sample(np.array([0, 0, 1]))]
+        observed_reward = "Low"
    
     elif action == "ChD3":
         
@@ -181,14 +183,15 @@ class omgeving(object):
       observed_choice = "ChD3"
       
       if self.context == "High":
-        observed_reward = self.reward_obs_names[utils.sample(np.array([0, 1, 0]))]
+        observed_reward = "High"
       else:
-        observed_reward = self.reward_obs_names[utils.sample(np.array([0, 0, 1]))]
+        observed_reward = "Low"
     
     obs = [observed_reward, observed_choice]
 
     return obs
 
+deck1,deck2,deck3 = [],[],[]
 def run_active_inference_loop(my_agent, my_env, T = 5):
 
   """ Initialize the first observation """
@@ -198,11 +201,18 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
   chosendecks = ["Start"]
   High_or_Low = [obs_label[0]] #will make a list containing whether it is high or low reward on each timepoint (for plotting)
   
+  prev_action = 'ChD1'
+  changes = 0
+  
   for t in range(T):
     #print(obs)
     qs = my_agent.infer_states(obs)  # agent changes beliefs about states based on observation
     print("Beliefs about the decks reward:", qs[0], qs[1], qs[2])
-
+    #store the beliefs
+    deck1.append(qs[0])
+    deck2.append(qs[2])
+    deck3.append(qs[1])
+    
     q_pi, efe = my_agent.infer_policies() #based on beliefs agent gives value to actions
     print('EFE for each action:', efe)
     
@@ -218,6 +228,12 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
          
         choice_action = choice_action_names[movement_id]
         print("Chosen action:", choice_action)
+        
+        #count how many times agent changes action
+        if prev_action != choice_action:
+            changes += 1
+            prev_action = choice_action
+        
     
     chosendecks.append(choice_action)
     obs_label = my_env.step(choice_action) #use step methode in 'omgeving' to generate new observation
@@ -227,7 +243,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
     print(f'Reward at time {t}: {obs_label[0]}')
     High_or_Low.append(obs_label[0][0])
     print(f'New observation:',choice_action,'&', reward_obs_names[obs[0]] + ' reward', '\n')
-  return chosendecks, High_or_Low
+  return chosendecks, High_or_Low, changes
 
 env = omgeving()
 T = 50
@@ -236,9 +252,10 @@ timepoints = [0]
 for t in range(T):
     timepoints.append(t)
     
-choices, rewards = run_active_inference_loop(my_agent, env, T = T)
+choices, rewards, changes = run_active_inference_loop(my_agent, env, T = T)
 
 #This shows which deck the agent is chosing over time and which reward the agent gets at each timepoint
+plt.figure(1)
 plt.scatter(timepoints, choices)
 for i, txt in enumerate(rewards):
     plt.annotate(txt, (timepoints[i], choices[i]))    
@@ -247,6 +264,29 @@ plt.title('Behavior of the model')
 plt.ylabel('Which deck?')
 plt.xlabel('Time')
 plt.text(x = -1.25,y = 2.13,s = 'H = High reward' + '\n' + 'L = Low Reward')
+#plt.show()
+
+
+#plotting beliefs (high reward)
+d1h,d2h,d3h =[0],[0],[0]
+for i in deck1:
+    d1h.append(i[0])
+for i in deck2:
+    d2h.append(i[0])
+for i in deck3:
+    d3h.append(i[0])
+    
+plt.figure(2)
+plt.plot(timepoints,d1h,label = 'beliefs deck1')
+plt.plot(timepoints,d2h,label = 'beliefs deck2')
+plt.plot(timepoints,d3h,label = 'beliefs deck3')
+plt.legend()
+plt.title('Belief about high reward chance')
 plt.show()
 
-#First agent is in 'Start', next there are 6 forced choices followed by free choice trials.
+print('value of reward =', rewval)
+print('value of information =', infoval)
+print('amount of changes =', changes)
+
+    
+    
