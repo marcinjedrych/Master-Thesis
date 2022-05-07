@@ -251,8 +251,8 @@ def changes(H, L):
 #high reward value vs small reward value (preferences c matrix)
 smallrew, highrew = [], []
 for i in range(20):
-    C = changes(H = 0.5, L = 0.2)
-    C2 = changes(0.8,0.2)
+    C = changes(H = 0.4, L = 0.2) #c matrix probabilities
+    C2 = changes(H = 0.8,L = 0.2) #c matrix probabilities
     smallrew.append(C)
     highrew.append(C2)
 

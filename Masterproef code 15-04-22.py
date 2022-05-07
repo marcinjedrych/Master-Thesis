@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Mar 22 18:12:07 2022
+Created on 15/04/2022
 
-@author: Lenovo
+Active inference model with 4 state factors, info conditions and mean plots of beliefs and behavior.
++ plot directed exploration vs random exploration vs exploitation.
+
+
+@author: Marcin Jedrych
 """
 
 """
@@ -45,17 +49,23 @@ num_modalities = len(num_obs)
    
 A = utils.obj_array( num_modalities )
 
-prob_win1 = [0.6,0.4] # what is the probability of high and low reward for deck1
-prob_win2 = [0.8,0.2] # what is the probability of high and low reward for deck2
-prob_win3 = [0.4,0.6] # what is the probability of high and low reward for deck3
 
-#probabilities according to the generative model
-pH1_G = 0.8 #chance to see high reward if deck 1 is good
-pH1_B = 0.2 #chance to see high reward if deck 1 is bad
-pH2_G = 0.8  #chance to see high reward if deck 2 is good
-pH2_B = 0.2 #chance to see high reward if deck 2 is bad
-pH3_G = 0.8 #chance to see high reward is deck 3 is good #??
-pH3_B = 0.2 #chance to see high reward if deck 3 is bad  #??
+# Werkelijkheid
+P_GB1 = [0.5,0.5]
+P_GB2 = [1,0]
+P_GB3 = [0,1]
+
+#for step function
+prob_win_good = 0.7 # what is the probability of high reward for a good deck
+prob_win_bad  =  0.3  # what is the probability of high reward for a bad deck
+
+#probabilities according to the generative model (for A-matrix)
+pH1_G = prob_win_good #chance to see high reward if deck 1 is good
+pH1_B = prob_win_bad #chance to see high reward if deck 1 is bad
+pH2_G = prob_win_good  #chance to see high reward if deck 2 is good
+pH2_B = prob_win_bad #chance to see high reward if deck 2 is bad
+pH3_G = prob_win_good #chance to see high reward is deck 3 is good #??
+pH3_B = prob_win_bad #chance to see high reward if deck 3 is bad  #??
   
  
 #function for agent
@@ -126,8 +136,8 @@ B[3] = B_choice
 ##C
 from pymdp.maths import softmax
 C = utils.obj_array_zeros([3, 4])
-C[0][1] = 0.9 #higher preference for high reward
-C[0][2] = 0.3
+C[0][1] = 0.7 #higher preference for high reward
+C[0][2] = 0.4
 
 ##D     high and low reward equaly likely for all decks in start.
 D = utils.obj_array(num_factors)
@@ -149,9 +159,16 @@ class omgeving(object):
 
   def __init__(self, context = None):
 
-    self.context_names = ['High','Low']
-    self.context = context
-    self.reward_obs_names = ['Null', 'High', 'Low']
+    self.Z = ['Good','Bad']
+    
+    if context == None:
+      self.D1 = self.Z[utils.sample(np.array(P_GB1))]
+      self.D2 = self.Z[utils.sample(np.array(P_GB2))]
+      self.D3 = self.Z[utils.sample(np.array(P_GB3))] # (good or bad)
+    else:
+      self.context = context
+    
+    self.reward_obs_names = ['High', 'Low']
 
   def step(self, action):
 
@@ -160,35 +177,32 @@ class omgeving(object):
       observed_choice   = "Start"
 
     elif action == "ChD1":
-      self.context = self.context_names[utils.sample(np.array(prob_win1))]
       observed_choice = "ChD1"
-      if self.context == "High":
-        observed_reward = "High"
+      if self.D1 == "Good":
+        observed_reward = self.reward_obs_names[utils.sample(np.array([prob_win_good,round(1- prob_win_good,1)]))]
       else:
-        observed_reward = "Low"
+        observed_reward = self.reward_obs_names[utils.sample(np.array([prob_win_bad, round(1-prob_win_bad,1)]))]
         
     elif action == "ChD2":
-      self.context = self.context_names[utils.sample(np.array(prob_win2))] 
       observed_choice = "ChD2"
-      if self.context == "High":
-        observed_reward = "High"
+      if self.D2 == "Good":
+        observed_reward = self.reward_obs_names[utils.sample(np.array([prob_win_good,round(1- prob_win_good,1)]))]
       else:
-        observed_reward = "Low"
+        observed_reward = self.reward_obs_names[utils.sample(np.array([prob_win_bad, round(1-prob_win_bad,1)]))]
    
     elif action == "ChD3":
-      self.context = self.context_names[utils.sample(np.array(prob_win3))]
       observed_choice = "ChD3"
-      if self.context == "High":
-        observed_reward = "High"
+      if self.D3 == "Good":
+        observed_reward = self.reward_obs_names[utils.sample(np.array([prob_win_good,round(1- prob_win_good,1)]))]
       else:
-        observed_reward = "Low"
+        observed_reward = self.reward_obs_names[utils.sample(np.array([prob_win_bad, round(1-prob_win_bad,1)]))]
     
     obs = [observed_reward, observed_choice]
 
     return obs
 
 env = omgeving() # define environment
-forced = 9 #amount of forced choice trials
+forced = 6 #amount of forced choice trials
 
 
 def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
@@ -204,6 +218,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
   
   for t in range(T):
       #print(obs)
+      # verdeling q(s) in de variable s
       qs = my_agent.infer_states(obs)  # agent changes beliefs about states based on observation
       print("Beliefs about the decks reward:", qs[0], qs[1], qs[2])
       #store the beliefs
@@ -233,23 +248,24 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
                 strategy = 'Exploit'
             else:
                 strategy = 'Random'
-      else:          
+      else:      
+          my_agent.sample_action()
       ##forced choice trials
           #unequal condition
-          if equal == False: 
-              if t < (1/3)*forced:
-                  choice_action = 'ChD2'
-              elif t < forced:
-                  choice_action = 'ChD3'
+          if equal == False:
+               if t < (1/3)*forced:
+                   choice_action = 'ChD3'
+               elif t <= forced:
+                   choice_action = 'ChD2'
         
           #equal info condition
           else: 
-              if t < (1/3)*forced:
-                  choice_action = 'ChD1'
-              elif t < 2*((1/3)*forced):
-                  choice_action = 'ChD2'
-              elif t < forced:
-                  choice_action = 'ChD3'
+               if t < (1/3)*forced:
+                   choice_action = 'ChD1'
+               elif t < 2*((1/3)*forced):
+                   choice_action = 'ChD3'
+               elif t <= forced:
+                   choice_action = 'ChD2'
             
       chosendecks.append(choice_action)
       obs_label = my_env.step(choice_action) #use step methode in 'omgeving' to generate new observation
@@ -261,7 +277,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
 
   return chosendecks, deck1, deck2, deck3, strategy
 
-T = 50
+T = 12
 
 ###function for choice plots and beliefs plot
 def plots(a,b, eq = True):  
@@ -282,7 +298,7 @@ def plots(a,b, eq = True):
         
         return y[0]
     
-    N = 100
+    N = 200
     d = {}
     b1,b2,b3 = {},{},{}
     strategy_list = []
@@ -294,7 +310,7 @@ def plots(a,b, eq = True):
     for i in range(N):
         deck1,deck2,deck3 = [],[],[]
         #run the model
-        my_agent = Agent(A = A, B = B, C = C, D = D)
+        my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
         choices, deck1, deck2, deck3, strategy = run_active_inference_loop(my_agent, env, T = T, equal = eq)
         strategy_list.append(strategy)
         
@@ -367,19 +383,19 @@ def plots(a,b, eq = True):
         
     plt.show()
     
-    return strategy_list
+    return strategy_list,N
 
 ##plot equal condition
-strategy1 = plots(1,2, eq = True)
-random1 = strategy1.count('Random')
-exploit1 = strategy1.count('Exploit')
-directed1 = strategy1.count('Direct')
+strategy1, N = plots(1,2, eq = True)
+random1 = strategy1.count('Random')/N
+exploit1 = strategy1.count('Exploit')/N
+directed1 = strategy1.count('Direct')/N
 
 ##plot unequal condition
-strategy2 = plots(3,4, eq = False) 
-random2 = strategy2.count('Random')
-exploit2 = strategy2.count('Exploit')
-directed2 = strategy2.count('Direct')
+strategy2, N = plots(3,4, eq = False) 
+random2 = strategy2.count('Random')/N
+exploit2 = strategy2.count('Exploit')/N
+directed2 = strategy2.count('Direct')/N
 
 print('EQUAL CONDITION:')
 print(f'Random: {random1} and Directed: {directed1}')
@@ -395,16 +411,14 @@ directed = [directed1, directed2]
 exploit = [exploit1 , exploit2]
 X_axis = np.arange(len(conditions))
 
-plt.bar(X_axis + 0.3, random, 0.3, label = 'Random')
-plt.bar(X_axis - 0.3, directed, 0.3, label = 'Directed')
-plt.bar(X_axis + 0.0, exploit, 0.3, label = 'Exploit')
+plt.bar(X_axis + 0.2, random, 0.2, label = 'Random')
+plt.bar(X_axis -0.2, directed, 0.2, label = 'Directed')
+plt.bar(X_axis - 0.0, exploit, 0.2, label = 'Exploit')
 
 plt.xticks(X_axis, conditions)
+plt.axvline(x=0.5, color = "black")
 plt.xlabel("Conditions")
 plt.ylabel("Exploration")
 plt.title("Strategy")
 plt.legend()
 plt.show()
-
-#exploit herzien (ms anders definieren in de loop) zodat het bij elke deck kan en niet altijd deck2
-#hoe komt het dat kansen terug naar 0.5 gaanzomaar?

@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 #import seaborn as sns
 from pymdp import utils
 from pymdp.agent import Agent
+import statistics
 
 verbose = False
 
@@ -45,12 +46,12 @@ prob_win2 = [0.8,0.2] # what is the probability of high and low reward for deck2
 prob_win3 = [0.4,0.6] # what is the probability of high and low reward for deck3
 
 #probabilities according to the generative model
-pH1_G = 0.8 #chance to see high reward if deck 1 is good
-pH1_B = 0.2 #chance to see high reward if deck 1 is bad
+pH1_G = 0.6 #chance to see high reward if deck 1 is good
+pH1_B = 0.4 #chance to see high reward if deck 1 is bad
 pH2_G = 0.8  #chance to see high reward if deck 2 is good
 pH2_B = 0.2 #chance to see high reward if deck 2 is bad
-pH3_G = 0.8  #chance to see high reward is deck 3 is good
-pH3_B = 0.2 #chance to see high reward if deck 3 is bad
+pH3_G = 0.4  #chance to see high reward is deck 3 is good
+pH3_B = 0.6 #chance to see high reward if deck 3 is bad
 
 # 3x2x2x2x4 = 96 cells
 A_reward = np.zeros((len(reward_obs_names), len(D1_names), len(D2_names),len(D3_names), len(choice_names)))
@@ -197,10 +198,11 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
   
   prev_action = 'ChD1'
   changes = 0
-  
+  #qs = 
   for t in range(T):
     #print(obs)
     qs = my_agent.infer_states(obs)  # agent changes beliefs about states based on observation
+    print(qs)
     print("Beliefs about the decks reward:", qs[0], qs[1], qs[2])
     #store the beliefs
     deck1.append(qs[0])
@@ -240,42 +242,82 @@ def run_active_inference_loop(my_agent, my_env, T = 5):
   return chosendecks, High_or_Low, changes
 
 env = omgeving() #environment
-T = 50
+T = 15
 
-timepoints = [0]
+###for plotting
+def strtoint(x):
+    
+    y = []
+    for i in x:
+        if i == 'ChD1':
+            y.append(1)
+        elif i == 'ChD2':
+            y.append(2)
+        elif i == 'ChD3':
+            y.append(3)
+        else:
+            y.append(0)
+    
+    return y[0]
+
+N = 20
+d = {}
+b1,b2,b3 = {},{},{}
+
+#make dictionaries for behavior and beliefs
+for timepoints in range(T):
+    d[timepoints],b1[timepoints],b2[timepoints],b3[timepoints] = [],[],[],[]
+
+for i in range(2):
+    deck1,deck2,deck3 = [],[],[]
+    #run the model
+    D = utils.obj_array(num_factors)
+    choices, rewards, changes = run_active_inference_loop(my_agent, env, T = T)
+    #fill in values for each timepoint
+    for timepoints in range(T):
+        d[timepoints].append( strtoint([choices[timepoints]]))
+        b1[timepoints].append(deck1[0][0])
+        b2[timepoints].append(deck2[0][0])
+        b3[timepoints].append(deck3[0][0])
+
+meanchoices,meanb1,meanb2,meanb3 = [],[],[],[]
+#compute man value for each timepoint
+for t in range(T):
+    d[t] = statistics.mean(d[t])
+    meanchoices.append(d[t])
+    
+    b1[t] = statistics.mean(b1[t])
+    meanb1.append(b1[t])
+    
+    b2[t] = statistics.mean(b2[t])
+    meanb2.append(b2[t])
+    
+    b3[t] = statistics.mean(b3[t])
+    meanb3.append(b3[t])
+    
+timepoints = []
 for t in range(T):
     timepoints.append(t)
-    
-choices, rewards, changes = run_active_inference_loop(my_agent, env, T = T)
 
 #This shows which deck the agent is chosing over time and which reward the agent gets at each timepoint
 plt.figure(1)
-plt.scatter(timepoints, choices)
-for i, txt in enumerate(rewards):
-    plt.annotate(txt, (timepoints[i], choices[i]))    
-plt.plot(timepoints, choices)
-plt.title('Behavior of the model')
+plt.scatter(timepoints, meanchoices)
+#for i, txt in enumerate(rewards):
+    #plt.annotate(txt, (timepoints[i], meanchoices[i]))    
+plt.plot(timepoints, meanchoices)
+plt.title('Behavior')
 plt.ylabel('Which deck?')
 plt.xlabel('Time')
-plt.text(x = -1.25,y = 2.13,s = 'H = High reward' + '\n' + 'L = Low Reward')
 #plt.show()
 
 
 #plotting beliefs (about high reward) over time
-d1h,d2h,d3h =[0],[0],[0]
-for i in deck1:
-    d1h.append(i[0])
-for i in deck2:
-    d2h.append(i[0])
-for i in deck3:
-    d3h.append(i[0])
-    
 plt.figure(2)
-plt.plot(timepoints,d1h,label = 'beliefs deck1')
-plt.plot(timepoints,d2h,label = 'beliefs deck2')
-plt.plot(timepoints,d3h,label = 'beliefs deck3')
+plt.plot(timepoints,meanb1,label = 'P(Deck 1 = High)')
+plt.plot(timepoints,meanb2,label = 'P(Deck 2 = High)')
+plt.plot(timepoints,meanb3,label = 'P(Deck 3 = High)')
 plt.legend()
-plt.title('Belief about high reward chance')
+plt.title('Beliefs')
 plt.show()
 
 print('value of reward =', rewval) #difference between high and low reward in C[0]
