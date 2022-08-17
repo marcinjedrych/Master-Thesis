@@ -45,21 +45,21 @@ choice_obs_names = ['Start', 'ChD1', 'ChD2','ChD3']
 num_obs = [len(reward_obs_names), len(choice_obs_names)]
 num_modalities = len(num_obs)
 
-##########A
+## A matrix
    
 A = utils.obj_array( num_modalities )
 
 
-# Werkelijkheid
+# reality (good or bad deck)
 P_GB1 = [0.5,0.5]
 P_GB2 = [1,0]
 P_GB3 = [0,1]
 
-#for step function
+# for step function
 prob_win_good = 0.7 # what is the probability of high reward for a good deck
 prob_win_bad  =  0.3  # what is the probability of high reward for a bad deck
 
-#probabilities according to the generative model (for A-matrix)
+# probabilities according to the generative model (for A-matrix)
 pH1_G = prob_win_good #chance to see high reward if deck 1 is good
 pH1_B = prob_win_bad #chance to see high reward if deck 1 is bad
 pH2_G = prob_win_good  #chance to see high reward if deck 2 is good
@@ -68,14 +68,14 @@ pH3_G = prob_win_good #chance to see high reward is deck 3 is good #??
 pH3_B = prob_win_bad #chance to see high reward if deck 3 is bad  #??
   
  
-#function for agent
+# function for agent
 # 3x2x2x2x4 = 96 cells
 A_reward = np.zeros((len(reward_obs_names), len(D1_names), len(D2_names),len(D3_names), len(choice_names)))
 
 # 4x2x2x2x4 = 128 cells
 A_choice = np.zeros((len(choice_obs_names), len(D1_names), len(D2_names),len(D3_names), len(choice_names)))
 
-#with probabilities in each cell
+# with probabilities in each cell
 for choice_id, choice_name in enumerate(choice_names):
     
     if choice_name == 'Start':
@@ -110,7 +110,8 @@ for choice_id in range(len(choice_names)):
 
 A[1] = A_choice
 
-##B (4 arrays because 4 state factors)
+## B matrix (4 arrays because 4 state factors)
+
 B = utils.obj_array(num_factors)
 
 B_context1 = np.zeros((len(D1_names), len(D1_names), len(context_action_names))) 
@@ -133,13 +134,14 @@ for choice_i in range(len(choice_names)):
 
 B[3] = B_choice
 
-##C
+## C matrix
+
 from pymdp.maths import softmax
 C = utils.obj_array_zeros([3, 4])
-C[0][1] = 0.7 #higher preference for high reward
-C[0][2] = 0.4
+C[0][1] = 0.6 #higher preference for high reward
+C[0][2] = 0.3
 
-##D     high and low reward equaly likely for all decks in start.
+## D matrix (high and low reward equaly likely for all decks in start.)
 D = utils.obj_array(num_factors)
 D_context1 = np.array([0.5,0.5])
 D_context2 = np.array([0.5,0.5])
@@ -153,7 +155,8 @@ D_choice = np.zeros(len(choice_names))
 D_choice[choice_names.index("Start")] = 1.0
 D[3] = D_choice
 
-############################################
+###############################################################################
+## making the environment
     
 class omgeving(object):
 
@@ -202,8 +205,11 @@ class omgeving(object):
     return obs
 
 env = omgeving() # define environment
-forced = 6 #amount of forced choice trials
 
+###############################################################################
+## making the active inference loop for each information condition (equal/unequal)
+
+forced = 6 #amount of forced choice trials
 
 def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
 
@@ -221,26 +227,28 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
       # verdeling q(s) in de variable s
       qs = my_agent.infer_states(obs)  # agent changes beliefs about states based on observation
       print("Beliefs about the decks reward:", qs[0], qs[1], qs[2])
-      #store the beliefs
+      
+      #store the beliefs for plots about beliefs
       deck1.append(qs[0])
       deck2.append(qs[2])
       deck3.append(qs[1])
 
       q_pi, efe = my_agent.infer_policies() #based on beliefs agent gives value to actions
       print('EFE for each action:', efe)
+      print('Q_PI:', q_pi)
       
-      ##free choice trials
+      ## free choice trials
       if t > forced:
         chosen_action_id = my_agent.sample_action()   #agent choses action with less negative expected free energy
-        #print('chosen action id',chosen_action_id)
+        print('chosen action id',chosen_action_id)
   
         movement_id = int(chosen_action_id[3])
-        #print("movement id", movement_id)
+        print("movement id", movement_id)
        
         choice_action = choice_action_names[movement_id]
         print("Chosen action:", choice_action)
   
-        #store strategy
+        #store strategy that is used in the first free choice trial for plot        ! [nog veranderen zodat dit altijd werkt en niet enkel als deck 2 het best is]
         if t == forced +1:
             if choice_action == 'ChD1' and equal is False:  #0 seen deck
                 strategy = 'Direct'
@@ -249,8 +257,9 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
             else:
                 strategy = 'Random'
       else:      
-          my_agent.sample_action()
-      ##forced choice trials
+          X = my_agent.sample_action()
+          print('X', X)
+      ## forced choice trials
           #unequal condition
           if equal == False:
                if t < (1/3)*forced:
@@ -267,7 +276,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
                elif t <= forced:
                    choice_action = 'ChD2'
             
-      chosendecks.append(choice_action)
+      chosendecks.append(choice_action) #store the actions for choice plots
       obs_label = my_env.step(choice_action) #use step methode in 'omgeving' to generate new observation
       obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
 
@@ -275,14 +284,16 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
       print(f'Reward at time {t}: {obs_label[0]}')
       print(f'New observation:',choice_action,'&', reward_obs_names[obs[0]] + ' reward', '\n')
 
-  return chosendecks, deck1, deck2, deck3, strategy
+  return chosendecks, deck1, deck2, deck3, strategy  #returns data for plotting
 
 T = 12
 
-###function for choice plots and beliefs plot
+______________________________________________________________________________
+
+## function for choice plots and beliefs plot
 def plots(a,b, eq = True):  
     
-    ###for plotting (convert chosen deck into integer)
+    #for plotting (convert chosen deck into integer)
     def strtoint(x):
         
         y = []
@@ -405,20 +416,22 @@ print(f'Random: {random2} and Directed: {directed2}')
 
 ##bar chart exploit, directed and random exploration:
 plt.figure(5)
-conditions = ['Equal','Unequal']
-random = [random1, random2]
-directed = [directed1, directed2]
-exploit = [exploit1 , exploit2]
+plt.yticks(np.arange(0, 1, 0.25))
+plt.ylim(0,1)
+conditions = ['Unequal','Equal']
+random = [random2, random1]
+directed = [directed2, directed1]
+exploit = [exploit2 , exploit1]
 X_axis = np.arange(len(conditions))
 
+plt.bar(X_axis - 0.2, directed, 0.2, label = 'Directed')
+plt.bar(X_axis -0.0, exploit, 0.2, label = 'Exploit')
 plt.bar(X_axis + 0.2, random, 0.2, label = 'Random')
-plt.bar(X_axis -0.2, directed, 0.2, label = 'Directed')
-plt.bar(X_axis - 0.0, exploit, 0.2, label = 'Exploit')
 
 plt.xticks(X_axis, conditions)
 plt.axvline(x=0.5, color = "black")
 plt.xlabel("Conditions")
-plt.ylabel("Exploration")
+plt.ylabel("Choice Probability")
 plt.title("Strategy")
 plt.legend()
 plt.show()
