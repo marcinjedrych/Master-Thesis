@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Last update: 17/08/2022
+Last update: 18/08/2022
 
 Active inference model with 4 state factors, info conditions and mean plots of beliefs and behavior.
 + plot directed exploration vs random exploration vs exploitation.
@@ -209,7 +209,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
   obs_label = ["Null", "Start"]  # agent observes a `Null` reward, and seeing itself in the `Start` location
   obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
   print('Initial observation:',obs)
-  chosendecks = ["Start"]
+  chosendecks = [0] # (0 for start action)
   
   deck1,deck2,deck3 = [],[],[]
   strategy = ''
@@ -229,7 +229,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
       print('EFE for each action:', efe)
       print('Q_PI:', q_pi)
       
-      ## free choice trials
+     ## FREE CHOICE TRIALS
       if t > forced:
         chosen_action_id = my_agent.sample_action()   #agent choses action with less negative expected free energy
         print('chosen action id',chosen_action_id)
@@ -250,8 +250,8 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
                 strategy = 'Random'
       else:      
           X = my_agent.sample_action()
-          print('X', X)
-      ## forced choice trials
+      
+     ## FORCED CHOICE TRIALS
           #unequal condition
           if equal == False:
                if t < (1/3)*forced:
@@ -267,8 +267,15 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
                    choice_action = 'ChD3'
                elif t <= forced:
                    choice_action = 'ChD2'
-            
-      chosendecks.append(choice_action) #store the actions for choice plots
+                   
+      #store the actions for choice plots (number of action)   
+      if choice_action == 'ChD1':
+          chosendecks.append(1)
+      elif choice_action == 'ChD2':
+          chosendecks.append(2)
+      else:
+          chosendecks.append(3)
+          
       obs_label = my_env.step(choice_action) #use step methode in 'omgeving' to generate new observation
       obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
 
@@ -280,38 +287,19 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
 
 T = 12
 
-______________________________________________________________________________
-
 ## function for choice plots and beliefs plot
 def plots(a,b, eq = True):  
     
-    #for plotting (convert chosen deck into integer)
-    def strtoint(x):
-        
-        y = []
-        for i in x:
-            if i == 'ChD1':
-                y.append(1)
-            elif i == 'ChD2':
-                y.append(2)
-            elif i == 'ChD3':
-                y.append(3)
-            else:
-                y.append(0)
-        
-        return y[0]
-    
-    N = 200
-    d = {}
-    b1,b2,b3 = {},{},{}
-    strategy_list = []
+    N = 100                  #amount of participants
+    d = {}                  #for choices at each timepoint
+    b1,b2,b3 = {},{},{}     #for beliefs at each timepoint
+    strategy_list = []      #to store the strategy at the first free choice trial
     
     #make dictionaries for behavior and beliefs
     for timepoints in range(T):
         d[timepoints],b1[timepoints],b2[timepoints],b3[timepoints] = [],[],[],[]
     
-    for i in range(N):
-        deck1,deck2,deck3 = [],[],[]
+    for i in range(N):   
         #run the model
         my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
         choices, deck1, deck2, deck3, strategy = run_active_inference_loop(my_agent, env, T = T, equal = eq)
@@ -320,7 +308,7 @@ def plots(a,b, eq = True):
         #fill in values for each timepoint
         W = 0
         for timepoints in range(T):
-            d[timepoints].append( strtoint([choices[timepoints]])) #timepoints choices
+            d[timepoints].append(choices[timepoints]) #timepoints choices
             b1[timepoints].append(deck1[timepoints][0]) #timepoints beliefs deck1
             b2[timepoints].append(deck2[timepoints][0]) #timepoints belief deck 2
             b3[timepoints].append(deck3[timepoints][0]) #timepoints belief deck 3
@@ -351,8 +339,8 @@ def plots(a,b, eq = True):
     for t in range(T):
         timepoints.append(t)
     
+    #This shows which deck the agent is chosing over time
     plt.figure(a)
-    #This shows which deck the agent is chosing over time and which reward the agent gets at each timepoint
     ticks = ['Deck A', 'Deck B', 'Deck C']
     plt.yticks([])
     plt.yticks([1,2,3], ticks)
@@ -369,7 +357,7 @@ def plots(a,b, eq = True):
     plt.ylabel('Which deck?')
     plt.xlabel('Time')
     
-    #plotting beliefs (about high reward) over time
+    #This shows the beliefs (about high reward) over time
     plt.figure(b)
     plt.plot(timepoints,meanb1,label = 'P(Deck 1 = High)')
     plt.plot(timepoints,meanb2,label = 'P(Deck 2 = High)')
