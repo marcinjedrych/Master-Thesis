@@ -42,10 +42,14 @@ num_modalities = len(num_obs)
 A = utils.obj_array( num_modalities )
 
 
-# reality (good or bad deck)
-P_GB1 = [0.5,0.5]
-P_GB2 = [1,0]
-P_GB3 = [0,1]
+# reality low reward context (good or bad)
+Plow_GB1 = [0.5,0.5] 
+Plow_GB2 = [1,0]  #best deck
+Plow_GB3 = [0,1]  #worst deck
+# reality high reward context 
+Phigh_GB1 = [0.7,0.3]
+Phigh_GB2 = [1,0]     #best deck
+Phigh_GB3 = [0.5,0.5] #worst deck
 
 # for step function
 prob_win_good = 0.7 # what is the probability of high reward for a good deck
@@ -152,16 +156,19 @@ D[3] = D_choice
     
 class omgeving(object):
 
-  def __init__(self, context = None):
+  def __init__(self, rewardcontext = 'High'):
 
     self.Z = ['Good','Bad']
     
-    if context == None:
-      self.D1 = self.Z[utils.sample(np.array(P_GB1))]
-      self.D2 = self.Z[utils.sample(np.array(P_GB2))]
-      self.D3 = self.Z[utils.sample(np.array(P_GB3))] # (good or bad)
+    #high or low reward context
+    if rewardcontext == 'High':
+      self.D1 = self.Z[utils.sample(np.array(Phigh_GB1))]
+      self.D2 = self.Z[utils.sample(np.array(Phigh_GB2))]
+      self.D3 = self.Z[utils.sample(np.array(Phigh_GB3))] # (good or bad)
     else:
-      self.context = context
+      self.D1 = self.Z[utils.sample(np.array(Plow_GB1))]
+      self.D2 = self.Z[utils.sample(np.array(Plow_GB2))]
+      self.D3 = self.Z[utils.sample(np.array(Plow_GB3))] # (good or bad
     
     self.reward_obs_names = ['High', 'Low']
 
@@ -196,7 +203,8 @@ class omgeving(object):
 
     return obs
 
-env = omgeving() # define environment
+env_high = omgeving() #high reward context omgeving
+env_low = omgeving(rewardcontext = 'low') #low reward context omgeving
 
 ###############################################################################
 ## making the active inference loop for each information condition (equal/unequal)
@@ -302,7 +310,7 @@ def plots(a,b, eq = True):
     for i in range(N):   
         #run the model
         my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
-        choices, deck1, deck2, deck3, strategy = run_active_inference_loop(my_agent, env, T = T, equal = eq)
+        choices, deck1, deck2, deck3, strategy = run_active_inference_loop(my_agent, env_low, T = T, equal = eq)  #on this line you can change between high or low reward context
         strategy_list.append(strategy)
         
         #fill in values for each timepoint
