@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Last update: 18/08/2022
+Last update: 19/08/2022
 
 Active inference model with 4 state factors, info conditions and mean plots of beliefs and behavior.
 + plot directed exploration vs random exploration vs exploitation.
++ high/low reward context argument (for now different probabilities of reward)
 @author: Marcin Jedrych
 """
 
@@ -423,3 +424,7 @@ plt.ylabel("Choice Probability")
 plt.title("Strategy")
 plt.legend()
 plt.show()
+
+## plot high vs low reward context:
+    
+    #.......
