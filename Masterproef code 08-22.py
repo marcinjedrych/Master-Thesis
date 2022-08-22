@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Last update: 19/08/2022
+Last update: 22/08/2022
 
 Active inference model with 4 state factors, info conditions and mean plots of beliefs and behavior.
 + plot directed exploration vs random exploration vs exploitation.
