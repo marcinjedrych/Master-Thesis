@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Last update: 22/08/2022
+Last update: 24/08/2022
 
 Active inference model with 4 state factors, info conditions and mean plots of beliefs and behavior.
 + plot directed exploration vs random exploration vs exploitation.
@@ -299,7 +299,7 @@ T = 12
 ## function for choice plots and beliefs plot
 def plots(a,b, eq = True, rewardcontext = env_low, otherplots = True):  
     
-    N = 300                #amount of participants
+    N = 30                #amount of participants
     d = {}                  #for choices at each timepoint
     b1,b2,b3 = {},{},{}     #for beliefs at each timepoint
     strategy_list = []      #to store the strategy at the first free choice trial
@@ -325,16 +325,21 @@ def plots(a,b, eq = True, rewardcontext = env_low, otherplots = True):
     meanchoices,meanb1,meanb2,meanb3 = [],[],[],[]
     sd_c_max,sd_b1_max,sd_b2_max,sd_b3_max = [],[],[],[]
     sd_c_min,sd_b1_min,sd_b2_min,sd_b3_min = [],[],[],[]
+    SDB1min, SDB1max = [],[]
     #compute mean value for each timepoint and variance (min and max))
     for t in range(T):
         
         meanchoices.append(statistics.mean(d[t]))
         sd_c_max.append(statistics.mean(d[t]) + statistics.variance(d[t]))
         sd_c_min.append(statistics.mean(d[t]) - statistics.variance(d[t]))
+
         
         meanb1.append(statistics.mean(b1[t]))
         sd_b1_max.append(statistics.mean(b1[t]) + statistics.variance(b1[t]))
         sd_b1_min.append(statistics.mean(b1[t]) - statistics.variance(b1[t]))
+        #SDB1max.append(statistics.mean(b1[t]) + statistics.stdev(b1[t])/2)    #(with sd)
+        
+        SDB1min.append(statistics.mean(b1[t]) - statistics.stdev(b1[t])/2)
         
         meanb2.append(statistics.mean(b2[t]))
         sd_b2_max.append(statistics.mean(b2[t]) + statistics.variance(b2[t]))
@@ -370,7 +375,7 @@ def plots(a,b, eq = True, rewardcontext = env_low, otherplots = True):
         plt.plot(timepoints,meanb1,label = 'P(Deck 1 = High)')
         plt.plot(timepoints,meanb2,label = 'P(Deck 2 = High)')
         plt.plot(timepoints,meanb3,label = 'P(Deck 3 = High)')
-        plt.fill_between(timepoints,sd_b1_min,sd_b1_max, alpha= 0.3)
+        plt.fill_between(timepoints,sd_b1_min,sd_b1_max, alpha= 0.3)            #SDB1min,SDB1max for Sd
         plt.fill_between(timepoints,sd_b2_min,sd_b2_max, alpha= 0.3)
         plt.fill_between(timepoints,sd_b3_min,sd_b3_max, alpha= 0.3)
         plt.legend()
@@ -382,17 +387,40 @@ def plots(a,b, eq = True, rewardcontext = env_low, otherplots = True):
     
     return strategy_list,N
 
-##plot equal condition
-strategy1, N = plots(1,2, eq = True, rewardcontext = env_low)
-random1 = strategy1.count('Random')/N
-exploit1 = strategy1.count('Exploit')/N
-directed1 = strategy1.count('Direct')/N
+##plot equal condition  +get sd
+for i in range(15):
+    if i == 0:
+        Random1, Exploit1, Directed1 = [],[],[]
+        strategy1, N = plots(1,2, eq = True, rewardcontext = env_low)
+    else: 
+        strategy1, N = plots(1,2, eq = True, rewardcontext = env_low, otherplots = False)
+    random1 = strategy1.count('Random')/N
+    Random1.append(random1)
+    exploit1 = strategy1.count('Exploit')/N
+    Exploit1.append(exploit1)
+    directed1 = strategy1.count('Direct')/N
+    Directed1.append(directed1)
+
+SdRandom1 = statistics.stdev(Random1)
+SdExploit1 = statistics.stdev(Exploit1)
 
 ##plot unequal condition
-strategy2, N = plots(3,4, eq = False, rewardcontext = env_low) 
-random2 = strategy2.count('Random')/N
-exploit2 = strategy2.count('Exploit')/N
-directed2 = strategy2.count('Direct')/N
+for i in range(15):
+    if i == 0:
+        Random2, Exploit2, Directed2 = [],[],[]
+        strategy2, N = plots(3,4, eq = False, rewardcontext = env_low) 
+    else:
+        strategy2, N = plots(3,4, eq = False, rewardcontext = env_low, otherplots = False) 
+    random2 = strategy2.count('Random')/N
+    Random2.append(random2)
+    exploit2 = strategy2.count('Exploit')/N
+    Exploit2.append(exploit2)
+    directed2 = strategy2.count('Direct')/N
+    Directed2.append(directed2)
+    
+SdRandom2 = statistics.stdev(Random2)
+SdExploit2 = statistics.stdev(Exploit2)
+SdDirected2 = statistics.stdev(Directed2)
 
 print('EQUAL CONDITION:')
 print(f'Random: {random1} and Directed: {directed1}')
@@ -410,9 +438,9 @@ directed = [directed2, directed1]
 exploit = [exploit2 , exploit1]
 X_axis = np.arange(len(conditions))
 
-plt.bar(X_axis - 0.2, directed, 0.2, label = 'Directed')
-plt.bar(X_axis -0.0, exploit, 0.2, label = 'Exploit')
-plt.bar(X_axis + 0.2, random, 0.2, label = 'Random')
+plt.bar(X_axis - 0.2, directed, 0.2, label = 'Directed', yerr = [SdDirected2,0])
+plt.bar(X_axis -0.0, exploit, 0.2, label = 'Exploit', yerr = [SdExploit2,SdExploit1])
+plt.bar(X_axis + 0.2, random, 0.2, label = 'Random', yerr = [SdRandom2,SdRandom1])
 
 plt.xticks(X_axis, conditions)
 plt.axvline(x=0.5, color = "black")
@@ -421,6 +449,8 @@ plt.ylabel("Choice Probability")
 plt.title("Strategy")
 plt.legend()
 plt.show()
+
+#--------------------------------------------------------------------------------
 
 ###########################################################
 ## plot high vs low reward context in unequal condition:
@@ -442,7 +472,7 @@ print(f'Random: {random1} and Directed: {directed1}')
 print('HIGH REWARD CONTEXT')
 print(f'Random: {random2} and Directed: {directed2}')
 
-##bar chart exploit, directed and random exploration:
+##bar chart
 plt.figure(6)
 plt.yticks(np.arange(0, 1.25, 0.25))
 plt.ylim(0,1)
@@ -484,7 +514,7 @@ print(f'Random: {random1} and Directed: {directed1}')
 print('HIGH REWARD CONTEXT')
 print(f'Random: {random2} and Directed: {directed2}')
 
-##bar chart exploit, directed and random exploration:
+##bar chart
 plt.figure(7)
 plt.yticks(np.arange(0, 1.25, 0.25))
 plt.ylim(0,1)
@@ -505,4 +535,3 @@ plt.ylabel("Choice Probability")
 plt.title("Equal info codition")
 plt.legend()
 plt.show()
-
