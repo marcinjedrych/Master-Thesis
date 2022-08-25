@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Last update: 24/08/2022
+Last update: 25/08/2022
 
 Active inference model with 4 state factors, info conditions and mean plots of beliefs and behavior.
 + plot directed exploration vs random exploration vs exploitation.
@@ -299,7 +299,7 @@ T = 12
 ## function for choice plots and beliefs plot
 def plots(a,b, eq = True, rewardcontext = env_low, otherplots = True):  
     
-    N = 30                #amount of participants
+    N = 50                #amount of participants
     d = {}                  #for choices at each timepoint
     b1,b2,b3 = {},{},{}     #for beliefs at each timepoint
     strategy_list = []      #to store the strategy at the first free choice trial
@@ -387,8 +387,9 @@ def plots(a,b, eq = True, rewardcontext = env_low, otherplots = True):
     
     return strategy_list,N
 
-##plot equal condition  +get sd
-for i in range(15):
+#-------------------------------------------------------------------------------
+##plot equal condition
+for i in range(10):
     if i == 0:
         Random1, Exploit1, Directed1 = [],[],[]
         strategy1, N = plots(1,2, eq = True, rewardcontext = env_low)
@@ -405,7 +406,7 @@ SdRandom1 = statistics.stdev(Random1)
 SdExploit1 = statistics.stdev(Exploit1)
 
 ##plot unequal condition
-for i in range(15):
+for i in range(10):
     if i == 0:
         Random2, Exploit2, Directed2 = [],[],[]
         strategy2, N = plots(3,4, eq = False, rewardcontext = env_low) 
