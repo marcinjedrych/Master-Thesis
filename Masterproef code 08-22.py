@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Last update: 25/08/2022
+Last update: 1/09/2022
 
 Active inference model with 4 state factors, info conditions and mean plots of beliefs and behavior.
 + plot directed exploration vs random exploration vs exploitation.
@@ -81,20 +81,20 @@ for choice_id, choice_name in enumerate(choice_names):
 
     elif choice_name == 'ChD1':
         
-        for i in range(len(D1_names)):
-            for loop in range(len(D1_names)):
+        for i in range(len(D2_names)):
+            for loop in range(len(D3_names)):
                 A_reward[1:,:,i,loop,choice_id] = np.array([[pH1_G,pH1_B],[1-pH1_G,1-pH1_B]])
         
     elif choice_name == 'ChD2':
         
-        for i in range(len(D2_names)):
+        for i in range(len(D1_names)):
             for loop in range(len(D2_names)):
                 A_reward[1:,i,loop,:,choice_id] = np.array([[pH2_G,pH2_B],[1-pH2_G,1-pH2_B]])
 
     elif choice_name == 'ChD3':
         
         for i in range(len(D3_names)):
-            for loop in range(len(D3_names)):
+            for loop in range(len(D1_names)):
                 A_reward[1:,loop,:,i,choice_id] = np.array([[pH3_G,pH3_B],[1-pH3_G,1-pH3_B]])
 
 A[0] = A_reward
@@ -217,7 +217,8 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
   """ Initialize the first observation """
   obs_label = ["Null", "Start"]  # agent observes a `Null` reward, and seeing itself in the `Start` location
   obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
-  print('Initial observation:',obs)
+  if verbose:
+      print('Initial observation:',obs)
   chosendecks = [0] # (0 for start action)
   
   deck1,deck2,deck3 = [],[],[]
@@ -227,7 +228,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
       #print(obs)
       # verdeling q(s) in de variable s
       qs = my_agent.infer_states(obs)  # agent changes beliefs about states based on observation
-      print("Beliefs about the decks reward:", qs[0], qs[1], qs[2])
+     
       
       #store the beliefs for plots about beliefs
       deck1.append(qs[0])
@@ -235,19 +236,24 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
       deck3.append(qs[1])
 
       q_pi, efe = my_agent.infer_policies() #based on beliefs agent gives value to actions
-      print('EFE for each action:', efe)
-      print('Q_PI:', q_pi)
+      
+      if verbose:
+          print("Beliefs about the decks reward:", qs[0], qs[1], qs[2])
+          print('EFE for each action:', efe)
+          print('Q_PI:', q_pi)
       
      ## FREE CHOICE TRIALS
       if t > forced:
         chosen_action_id = my_agent.sample_action()   #agent choses action with less negative expected free energy
-        print('chosen action id',chosen_action_id)
   
         movement_id = int(chosen_action_id[3])
-        print("movement id", movement_id)
        
         choice_action = choice_action_names[movement_id]
-        print("Chosen action:", choice_action)
+        
+        if verbose:
+            print('chosen action id',chosen_action_id)
+            print("movement id", movement_id)
+            print("Chosen action:", choice_action)
   
         #store strategy that is used in the first free choice trial for plot        ! [nog veranderen zodat dit altijd werkt en niet enkel als deck 2 het best is]
         if t == forced +1:
@@ -288,9 +294,10 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
       obs_label = my_env.step(choice_action) #use step methode in 'omgeving' to generate new observation
       obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
 
-      print(f'Action at time {t}: {choice_action}')
-      print(f'Reward at time {t}: {obs_label[0]}')
-      print(f'New observation:',choice_action,'&', reward_obs_names[obs[0]] + ' reward', '\n')
+      if verbose:
+          print(f'Action at time {t}: {choice_action}')
+          print(f'Reward at time {t}: {obs_label[0]}')
+          print(f'New observation:',choice_action,'&', reward_obs_names[obs[0]] + ' reward', '\n')
 
   return chosendecks, deck1, deck2, deck3, strategy  #returns data for plotting
 
