@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Last update: 22/08/2022
+Last update: 1/09/2022
 
 Active inference model with 4 state factors, info conditions and mean plots of beliefs and behavior.
 + plot directed exploration vs random exploration vs exploitation.
@@ -213,11 +213,14 @@ env_low = omgeving(rewardcontext = 'low') #low reward context omgeving
 forced = 6 #amount of forced choice trials
 
 def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
+#C veranderen hier
+    
 
   """ Initialize the first observation """
   obs_label = ["Null", "Start"]  # agent observes a `Null` reward, and seeing itself in the `Start` location
   obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
-  print('Initial observation:',obs)
+  if verbose:
+      print('Initial observation:',obs)
   chosendecks = [0] # (0 for start action)
   
   deck1,deck2,deck3 = [],[],[]
@@ -227,7 +230,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
       #print(obs)
       # verdeling q(s) in de variable s
       qs = my_agent.infer_states(obs)  # agent changes beliefs about states based on observation
-      print("Beliefs about the decks reward:", qs[0], qs[1], qs[2])
+     
       
       #store the beliefs for plots about beliefs
       deck1.append(qs[0])
@@ -235,19 +238,24 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
       deck3.append(qs[1])
 
       q_pi, efe = my_agent.infer_policies() #based on beliefs agent gives value to actions
-      print('EFE for each action:', efe)
-      print('Q_PI:', q_pi)
+      
+      if verbose:
+          print("Beliefs about the decks reward:", qs[0], qs[1], qs[2])
+          print('EFE for each action:', efe)
+          print('Q_PI:', q_pi)
       
      ## FREE CHOICE TRIALS
       if t > forced:
         chosen_action_id = my_agent.sample_action()   #agent choses action with less negative expected free energy
-        print('chosen action id',chosen_action_id)
   
         movement_id = int(chosen_action_id[3])
-        print("movement id", movement_id)
        
         choice_action = choice_action_names[movement_id]
-        print("Chosen action:", choice_action)
+        
+        if verbose:
+            print('chosen action id',chosen_action_id)
+            print("movement id", movement_id)
+            print("Chosen action:", choice_action)
   
         #store strategy that is used in the first free choice trial for plot        ! [nog veranderen zodat dit altijd werkt en niet enkel als deck 2 het best is]
         if t == forced +1:
@@ -288,221 +296,77 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
       obs_label = my_env.step(choice_action) #use step methode in 'omgeving' to generate new observation
       obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
 
-      print(f'Action at time {t}: {choice_action}')
-      print(f'Reward at time {t}: {obs_label[0]}')
-      print(f'New observation:',choice_action,'&', reward_obs_names[obs[0]] + ' reward', '\n')
+      if verbose:
+          print(f'Action at time {t}: {choice_action}')
+          print(f'Reward at time {t}: {obs_label[0]}')
+          print(f'New observation:',choice_action,'&', reward_obs_names[obs[0]] + ' reward', '\n')
 
   return chosendecks, deck1, deck2, deck3, strategy  #returns data for plotting
 
 T = 12
 
 ## function for choice plots and beliefs plot
-def plots(a,b, eq = True, rewardcontext = env_low, otherplots = True):  
+def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0):  
     
-    N = 300                #amount of participants
-    d = {}                  #for choices at each timepoint
-    b1,b2,b3 = {},{},{}     #for beliefs at each timepoint
+    N = 30                #amount of participants
     strategy_list = []      #to store the strategy at the first free choice trial
-    
-    #make dictionaries for behavior and beliefs
-    for timepoints in range(T):
-        d[timepoints],b1[timepoints],b2[timepoints],b3[timepoints] = [],[],[],[]
     
     for i in range(N):   
         #run the model
-        my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
+        if pref == 0:
+            my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
+        elif pref == 1:
+            C[0][1] = 0.7 #higher preference for high reward
+            C[0][2] = 0.3
+            my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
         choices, deck1, deck2, deck3, strategy = run_active_inference_loop(my_agent, rewardcontext, T = T, equal = eq)  #on this line you can change between high or low reward context
-        strategy_list.append(strategy)
-        
-        #fill in values for each timepoint
-        W = 0
-        for timepoints in range(T):
-            d[timepoints].append(choices[timepoints]) #timepoints choices
-            b1[timepoints].append(deck1[timepoints][0]) #timepoints beliefs deck1
-            b2[timepoints].append(deck2[timepoints][0]) #timepoints belief deck 2
-            b3[timepoints].append(deck3[timepoints][0]) #timepoints belief deck 3
-            
-    meanchoices,meanb1,meanb2,meanb3 = [],[],[],[]
-    sd_c_max,sd_b1_max,sd_b2_max,sd_b3_max = [],[],[],[]
-    sd_c_min,sd_b1_min,sd_b2_min,sd_b3_min = [],[],[],[]
-    #compute mean value for each timepoint and variance (min and max))
-    for t in range(T):
-        
-        meanchoices.append(statistics.mean(d[t]))
-        sd_c_max.append(statistics.mean(d[t]) + statistics.variance(d[t]))
-        sd_c_min.append(statistics.mean(d[t]) - statistics.variance(d[t]))
-        
-        meanb1.append(statistics.mean(b1[t]))
-        sd_b1_max.append(statistics.mean(b1[t]) + statistics.variance(b1[t]))
-        sd_b1_min.append(statistics.mean(b1[t]) - statistics.variance(b1[t]))
-        
-        meanb2.append(statistics.mean(b2[t]))
-        sd_b2_max.append(statistics.mean(b2[t]) + statistics.variance(b2[t]))
-        sd_b2_min.append(statistics.mean(b2[t]) - statistics.variance(b2[t]))
-        
-        meanb3.append(statistics.mean(b3[t]))
-        sd_b3_max.append(statistics.mean(b3[t]) + statistics.variance(b3[t]))
-        sd_b3_min.append(statistics.mean(b3[t]) - statistics.variance(b3[t]))
-    
-    timepoints = []
-    for t in range(T):
-        timepoints.append(t)
-    
-    if otherplots is True:
-        ## This shows which deck the agent is chosing over time
-        plt.figure(a)
-        ticks = ['Deck A', 'Deck B', 'Deck C']
-        plt.yticks([])
-        plt.yticks([1,2,3], ticks)
-        plt.ylim(0,3.1)
-        plt.scatter(timepoints, meanchoices)
-        plt.plot(timepoints, meanchoices)
-        plt.fill_between(timepoints,sd_c_min,sd_c_max, alpha= 0.3) 
-        if a == 1:
-            plt.title('Behavior (equal condition)')
-        elif a == 3:
-            plt.title('Behavior (unequal condition)')   
-        plt.ylabel('Which deck?')
-        plt.xlabel('Time')
-        
-        ## This shows the beliefs (about high reward) over time
-        plt.figure(b)
-        plt.plot(timepoints,meanb1,label = 'P(Deck 1 = High)')
-        plt.plot(timepoints,meanb2,label = 'P(Deck 2 = High)')
-        plt.plot(timepoints,meanb3,label = 'P(Deck 3 = High)')
-        plt.fill_between(timepoints,sd_b1_min,sd_b1_max, alpha= 0.3)
-        plt.fill_between(timepoints,sd_b2_min,sd_b2_max, alpha= 0.3)
-        plt.fill_between(timepoints,sd_b3_min,sd_b3_max, alpha= 0.3)
-        plt.legend()
-        if b == 2:
-            plt.title('Beliefs (equal condition)')
-        elif b == 4:
-            plt.title('Beliefs (unequal condition)')    
-        plt.show()
+        strategy_list.append(strategy)        
     
     return strategy_list,N
 
-##plot equal condition
-strategy1, N = plots(1,2, eq = True, rewardcontext = env_low)
-random1 = strategy1.count('Random')/N
-exploit1 = strategy1.count('Exploit')/N
-directed1 = strategy1.count('Direct')/N
+#-------------------------------------------------------------------------------
+def plot(pref = 0, eq = True):
 
-##plot unequal condition
-strategy2, N = plots(3,4, eq = False, rewardcontext = env_low) 
-random2 = strategy2.count('Random')/N
-exploit2 = strategy2.count('Exploit')/N
-directed2 = strategy2.count('Direct')/N
+    for i in range(10):
+        if i == 0:
+            Random, Exploit, Directed = [],[],[]
+            strategy, N = runningmodel(3,4, eq = eq, rewardcontext = env_low, pref = pref) 
+        else:
+            strategy, N = runningmodel(3,4, eq = eq, rewardcontext = env_low, pref = pref ) 
+        random = strategy.count('Random')/N
+        Random.append(random)
+        exploit = strategy.count('Exploit')/N
+        Exploit.append(exploit)
+        directed = strategy.count('Direct')/N
+        Directed.append(directed)
+        
+    SdRandom = statistics.stdev(Random)
+    SdExploit = statistics.stdev(Exploit)
+    SdDirected = statistics.stdev(Directed)
+    
+    return statistics.mean(Random), statistics.mean(Directed), statistics.mean(Exploit)
 
-print('EQUAL CONDITION:')
-print(f'Random: {random1} and Directed: {directed1}')
+Random, Directed, Exploit = plot(pref = 0, eq = False)
+Random2, Directed2, Exploit2 = plot(pref = 0, eq = True)
+Random3, Directed3, Exploit3 = plot(pref = 1, eq = False)
+Random4, Directed4, Exploit4 = plot(pref = 1, eq = True)
 
-print('UNEQUAL CONDITION')
-print(f'Random: {random2} and Directed: {directed2}')
+def plot22(data = 0):
+    fig, axs = plt.subplots(2,2)
+    rows, cols = 2,2
+    
+    for row in range(rows):
+        for col in range(cols):
+            if row == 0 and col ==0:            
+                axs[row,col].bar([1,2,3],data[0])
+            elif row == 0 and col == 1:
+                axs[row,col].bar([1,2,3],data[1])
+            elif row == 1 and col == 0:
+                axs[row,col].bar([1,2,3],data[2])
+            else:
+                axs[row,col].bar([1,2,3],data[3])
+    
+plot22(data = [[Directed, Exploit, Random],[Directed2, Exploit2, Random2],[Directed3, Exploit3, Random3],[Directed4, Exploit4, Random4]])
 
-##bar chart exploit, directed and random exploration:
-plt.figure(5)
-plt.yticks(np.arange(0, 1.25, 0.25))
-plt.ylim(0,1)
-conditions = ['Unequal','Equal']
-random = [random2, random1]
-directed = [directed2, directed1]
-exploit = [exploit2 , exploit1]
-X_axis = np.arange(len(conditions))
-
-plt.bar(X_axis - 0.2, directed, 0.2, label = 'Directed')
-plt.bar(X_axis -0.0, exploit, 0.2, label = 'Exploit')
-plt.bar(X_axis + 0.2, random, 0.2, label = 'Random')
-
-plt.xticks(X_axis, conditions)
-plt.axvline(x=0.5, color = "black")
-plt.xlabel("Conditions")
-plt.ylabel("Choice Probability")
-plt.title("Strategy")
-plt.legend()
-plt.show()
-
-###########################################################
-## plot high vs low reward context in unequal condition:
-
-strategy1, N = plots(1,2, eq = False, rewardcontext = env_low, otherplots = False)
-random1 = strategy1.count('Random')/N
-exploit1 = strategy1.count('Exploit')/N
-directed1 = strategy1.count('Direct')/N
-
-##plot high reward condition
-strategy2, N = plots(3,4, eq = False, rewardcontext = env_high, otherplots = False) 
-random2 = strategy2.count('Random')/N
-exploit2 = strategy2.count('Exploit')/N
-directed2 = strategy2.count('Direct')/N
-
-print('LOW REWARD CONTEXT:')
-print(f'Random: {random1} and Directed: {directed1}')
-
-print('HIGH REWARD CONTEXT')
-print(f'Random: {random2} and Directed: {directed2}')
-
-##bar chart
-plt.figure(6)
-plt.yticks(np.arange(0, 1.25, 0.25))
-plt.ylim(0,1)
-conditions = ['high reward','low reward']
-random = [random2, random1]
-directed = [directed2, directed1]
-exploit = [exploit2 , exploit1]
-X_axis = np.arange(len(conditions))
-
-plt.bar(X_axis - 0.2, directed, 0.2, label = 'Directed')
-plt.bar(X_axis -0.0, exploit, 0.2, label = 'Exploit')
-plt.bar(X_axis + 0.2, random, 0.2, label = 'Random')
-
-plt.xticks(X_axis, conditions)
-plt.axvline(x=0.5, color = "black")
-plt.xlabel("Context")
-plt.ylabel("Choice Probability")
-plt.title("Unequal info codition")
-plt.legend()
-plt.show()
-
-###########################################################
-## plot high vs low reward context in equal condition:
-
-strategy1, N = plots(1,2, eq = True, rewardcontext = env_low, otherplots = False)
-random1 = strategy1.count('Random')/N
-exploit1 = strategy1.count('Exploit')/N
-directed1 = strategy1.count('Direct')/N
-
-##plot high reward condition
-strategy2, N = plots(3,4, eq = True, rewardcontext = env_high, otherplots = False) 
-random2 = strategy2.count('Random')/N
-exploit2 = strategy2.count('Exploit')/N
-directed2 = strategy2.count('Direct')/N
-
-print('LOW REWARD CONTEXT:')
-print(f'Random: {random1} and Directed: {directed1}')
-
-print('HIGH REWARD CONTEXT')
-print(f'Random: {random2} and Directed: {directed2}')
-
-##bar chart
-plt.figure(7)
-plt.yticks(np.arange(0, 1.25, 0.25))
-plt.ylim(0,1)
-conditions = ['high reward','low reward']
-random = [random2, random1]
-directed = [directed2, directed1]
-exploit = [exploit2 , exploit1]
-X_axis = np.arange(len(conditions))
-
-plt.bar(X_axis - 0.2, directed, 0.2, label = 'Directed')
-plt.bar(X_axis -0.0, exploit, 0.2, label = 'Exploit')
-plt.bar(X_axis + 0.2, random, 0.2, label = 'Random')
-
-plt.xticks(X_axis, conditions)
-plt.axvline(x=0.5, color = "black")
-plt.xlabel("Context")
-plt.ylabel("Choice Probability")
-plt.title("Equal info codition")
-plt.legend()
-plt.show()
-
+#plot1 in 4x4 steken
+#c veranderen in runactiveinferenceloop en andere plots meemaken
