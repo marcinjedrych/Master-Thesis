@@ -10,6 +10,7 @@ Active inference model with 4 state factors, info conditions and mean plots of b
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 #import seaborn as sns
 from pymdp import utils
 from pymdp.agent import Agent
@@ -152,7 +153,8 @@ D_choice = np.zeros(len(choice_names))
 D_choice[choice_names.index("Start")] = 1.0
 D[3] = D_choice
 
-###############################################################################
+#--------------------------------------------------------------------------------
+
 ## making the environment
     
 class omgeving(object):
@@ -207,14 +209,13 @@ class omgeving(object):
 env_high = omgeving() #high reward context omgeving
 env_low = omgeving(rewardcontext = 'low') #low reward context omgeving
 
-###############################################################################
+#--------------------------------------------------------------------------------
+
 ## making the active inference loop for each information condition (equal/unequal)
 
 forced = 6 #amount of forced choice trials
 
 def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
-#C veranderen hier
-    
 
   """ Initialize the first observation """
   obs_label = ["Null", "Start"]  # agent observes a `Null` reward, and seeing itself in the `Start` location
@@ -230,15 +231,11 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
       #print(obs)
       # verdeling q(s) in de variable s
       qs = my_agent.infer_states(obs)  # agent changes beliefs about states based on observation
-     
-      
       #store the beliefs for plots about beliefs
       deck1.append(qs[0])
       deck2.append(qs[2])
       deck3.append(qs[1])
-
       q_pi, efe = my_agent.infer_policies() #based on beliefs agent gives value to actions
-      
       if verbose:
           print("Beliefs about the decks reward:", qs[0], qs[1], qs[2])
           print('EFE for each action:', efe)
@@ -247,16 +244,12 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
      ## FREE CHOICE TRIALS
       if t > forced:
         chosen_action_id = my_agent.sample_action()   #agent choses action with less negative expected free energy
-  
         movement_id = int(chosen_action_id[3])
-       
         choice_action = choice_action_names[movement_id]
-        
         if verbose:
             print('chosen action id',chosen_action_id)
             print("movement id", movement_id)
             print("Chosen action:", choice_action)
-  
         #store strategy that is used in the first free choice trial for plot        ! [nog veranderen zodat dit altijd werkt en niet enkel als deck 2 het best is]
         if t == forced +1:
             if choice_action == 'ChD1' and equal is False:  #0 seen deck
@@ -275,7 +268,6 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
                    choice_action = 'ChD3'
                elif t <= forced:
                    choice_action = 'ChD2'
-        
           #equal info condition
           else: 
                if t < (1/3)*forced:
@@ -283,8 +275,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
                elif t < 2*((1/3)*forced):
                    choice_action = 'ChD3'
                elif t <= forced:
-                   choice_action = 'ChD2'
-                   
+                   choice_action = 'ChD2'           
       #store the actions for choice plots (number of action)   
       if choice_action == 'ChD1':
           chosendecks.append(1)
@@ -295,7 +286,6 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
           
       obs_label = my_env.step(choice_action) #use step methode in 'omgeving' to generate new observation
       obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
-
       if verbose:
           print(f'Action at time {t}: {choice_action}')
           print(f'Reward at time {t}: {obs_label[0]}')
@@ -305,34 +295,34 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
 
 T = 12
 
-## function for choice plots and beliefs plot
-def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0):  
+#--------------------------------------------------------------------------------
+
+def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0.5):  
     
-    N = 30                #amount of participants
+    N = 10                #amount of participants
     strategy_list = []      #to store the strategy at the first free choice trial
     
     for i in range(N):   
         #run the model
-        if pref == 0:
-            my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
-        elif pref == 1:
-            C[0][1] = 0.7 #higher preference for high reward
-            C[0][2] = 0.3
-            my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
+        C[0][1] = pref #preference for high reward
+        #print(C)
+        my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
+        
         choices, deck1, deck2, deck3, strategy = run_active_inference_loop(my_agent, rewardcontext, T = T, equal = eq)  #on this line you can change between high or low reward context
         strategy_list.append(strategy)        
     
     return strategy_list,N
 
 #-------------------------------------------------------------------------------
-def plot(pref = 0, eq = True):
+
+def data(pref = 0.5, eq = True):
 
     for i in range(10):
         if i == 0:
             Random, Exploit, Directed = [],[],[]
-            strategy, N = runningmodel(3,4, eq = eq, rewardcontext = env_low, pref = pref) 
-        else:
-            strategy, N = runningmodel(3,4, eq = eq, rewardcontext = env_low, pref = pref ) 
+        
+        strategy, N = runningmodel(3,4, eq = eq, rewardcontext = env_low, pref = pref ) 
+        
         random = strategy.count('Random')/N
         Random.append(random)
         exploit = strategy.count('Exploit')/N
@@ -344,29 +334,62 @@ def plot(pref = 0, eq = True):
     SdExploit = statistics.stdev(Exploit)
     SdDirected = statistics.stdev(Directed)
     
-    return statistics.mean(Random), statistics.mean(Directed), statistics.mean(Exploit)
+    return [statistics.mean(Directed), statistics.mean(Exploit), statistics.mean(Random)]
 
-Random, Directed, Exploit = plot(pref = 0, eq = False)
-Random2, Directed2, Exploit2 = plot(pref = 0, eq = True)
-Random3, Directed3, Exploit3 = plot(pref = 1, eq = False)
-Random4, Directed4, Exploit4 = plot(pref = 1, eq = True)
+#Unequal condition
+U1 = data(eq = False)
+U2 = data(pref = 0.6, eq = False)
+U3 = data(pref = 0.7, eq = False)
+U4 = data(pref = 0.8, eq = False)
 
-def plot22(data = 0):
-    fig, axs = plt.subplots(2,2)
-    rows, cols = 2,2
+#Equal condition
+E1 = data(eq = True)
+E2 = data(pref = 0.6, eq = True)
+E3 = data(pref = 0.7, eq = True)
+E4 = data(pref = 0.8, eq = True)
+
+#------------------------------------------------------------------------------
+
+#function for 2x4 plot
+def plot2x4(data = 0):
+    fig, axs = plt.subplots(2,4)
+    rows, cols = 2,4
+    color = ['blue','orange','green']
+    fig.suptitle('')
+    xb =[1,2,3]
+    labels = ['Directed','Exploit','Random']
+    blue = mpatches.Patch(color = 'blue', label = 'Directed')
+    orange = mpatches.Patch(color = 'orange', label = 'Exploit')
+    green = mpatches.Patch(color = 'green', label = 'Random')
+    colors = [blue, orange, green]
     
     for row in range(rows):
         for col in range(cols):
-            if row == 0 and col ==0:            
-                axs[row,col].bar([1,2,3],data[0])
-            elif row == 0 and col == 1:
-                axs[row,col].bar([1,2,3],data[1])
-            elif row == 1 and col == 0:
-                axs[row,col].bar([1,2,3],data[2])
+            if row == 0:
+                axs[row,col].bar(xb,data[col], color = color)
+                if col == 0:   
+                    axs[row,col].set_title('Unequal condition, preference for high reward = 0.5', fontsize = 6.5)   
+                if col == 1:
+                    axs[row,col].set_title('Unequal condition, preference for high reward = 0.6', fontsize = 6.5)
+                elif col == 2:
+                    axs[row,col].set_title('Unequal condition, preference for high reward = 0.7', fontsize = 6.5)
+                elif col == 3:
+                    axs[row,col].set_title('Unequal condition, preference for high reward = 0.8', fontsize = 6.5)
             else:
-                axs[row,col].bar([1,2,3],data[3])
+                axs[row,col].bar(xb,data[col+4], color = color)
+                if col == 0:
+                    axs[row,col].set_title('Equal condition, preference for high reward = 0.5', fontsize = 6.5)
+                elif col == 1:
+                    axs[row,col].set_title('Equal condition, preference for high reward = 0.6', fontsize = 6.5)
+                elif col == 2:
+                    axs[row,col].set_title('Equal condition, preference for high reward = 0.7', fontsize = 6.5)
+                elif col == 3:
+                    axs[row,col].set_title('Equal condition, preference for high reward = 0.8', fontsize = 6.5)
+       
+    fig.tight_layout()
+    plt.subplot_tool()
+    axs[row,col].legend(colors, labels, loc = [-5,2],prop={'size': 9})
     
-plot22(data = [[Directed, Exploit, Random],[Directed2, Exploit2, Random2],[Directed3, Exploit3, Random3],[Directed4, Exploit4, Random4]])
+plot2x4(data = [U1, U2, U3, U4, E1, E2, E3, E4])
 
-#plot1 in 4x4 steken
-#c veranderen in runactiveinferenceloop en andere plots meemaken
+#plot in 4x4 steken
