@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Last update: 1/09/2022
+Last update: 9/09/2022
 
-Active inference model with 4 state factors, info conditions and mean plots of beliefs and behavior.
-+ plot directed exploration vs random exploration vs exploitation.
-+ high/low reward context argument (for now different probabilities of reward)
+2x4 plot 
 @author: Marcin Jedrych
 """
 
