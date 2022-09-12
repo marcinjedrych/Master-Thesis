@@ -215,25 +215,20 @@ forced = 6 #amount of forced choice trials
 
 def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
 
-  """ Initialize the first observation """
+  #Initialize the first observation
   obs_label = ["Null", "Start"]  # agent observes a `Null` reward, and seeing itself in the `Start` location
   obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
   if verbose:
       print('Initial observation:',obs)
   chosendecks = [0] # (0 for start action)
-  
-  deck1,deck2,deck3 = [],[],[]
   strategy = ''
   
   for t in range(T):
       #print(obs)
       # verdeling q(s) in de variable s
       qs = my_agent.infer_states(obs)  # agent changes beliefs about states based on observation
-      #store the beliefs for plots about beliefs
-      deck1.append(qs[0])
-      deck2.append(qs[2])
-      deck3.append(qs[1])
       q_pi, efe = my_agent.infer_policies() #based on beliefs agent gives value to actions
+      
       if verbose:
           print("Beliefs about the decks reward:", qs[0], qs[1], qs[2])
           print('EFE for each action:', efe)
@@ -248,6 +243,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
             print('chosen action id',chosen_action_id)
             print("movement id", movement_id)
             print("Chosen action:", choice_action)
+            
         #store strategy that is used in the first free choice trial for plot        ! [nog veranderen zodat dit altijd werkt en niet enkel als deck 2 het best is]
         if t == forced +1:
             if choice_action == 'ChD1' and equal is False:  #0 seen deck
@@ -274,14 +270,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
                    choice_action = 'ChD3'
                elif t <= forced:
                    choice_action = 'ChD2'           
-      #store the actions for choice plots (number of action)   
-      if choice_action == 'ChD1':
-          chosendecks.append(1)
-      elif choice_action == 'ChD2':
-          chosendecks.append(2)
-      else:
-          chosendecks.append(3)
-          
+
       obs_label = my_env.step(choice_action) #use step methode in 'omgeving' to generate new observation
       obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
       if verbose:
@@ -289,7 +278,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
           print(f'Reward at time {t}: {obs_label[0]}')
           print(f'New observation:',choice_action,'&', reward_obs_names[obs[0]] + ' reward', '\n')
 
-  return chosendecks, deck1, deck2, deck3, strategy  #returns data for plotting
+  return strategy  #returns data for plotting
 
 T = 12
 
@@ -306,7 +295,7 @@ def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0.5):
         #print(C)
         my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
         
-        choices, deck1, deck2, deck3, strategy = run_active_inference_loop(my_agent, rewardcontext, T = T, equal = eq)  #on this line you can change between high or low reward context
+        strategy = run_active_inference_loop(my_agent, rewardcontext, T = T, equal = eq)  #on this line you can change between high or low reward context
         strategy_list.append(strategy)        
     
     return strategy_list,N
@@ -327,7 +316,8 @@ def data(pref = 0.5, eq = True):
         Exploit.append(exploit)
         directed = strategy.count('Direct')/N
         Directed.append(directed)
-        
+      
+    # to plot errorbars (nog doen)
     SdRandom = statistics.stdev(Random)
     SdExploit = statistics.stdev(Exploit)
     SdDirected = statistics.stdev(Directed)
