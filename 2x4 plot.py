@@ -43,13 +43,13 @@ A = utils.obj_array( num_modalities )
 
 
 # reality low reward context (good or bad)
-Plow_GB1 = [0.5,0.5] 
-Plow_GB2 = [1,0]  #best deck
+Plow_GB1 = [0.3,0.7] 
+Plow_GB2 = [0.3,0.7]  #best deck
 Plow_GB3 = [0,1]  #worst deck
 # reality high reward context 
-Phigh_GB1 = [0.7,0.3]
+Phigh_GB1 = [0.3,0.7]
 Phigh_GB2 = [1,0]     #best deck
-Phigh_GB3 = [0.5,0.5] #worst deck
+Phigh_GB3 = [1,0] #worst deck
 
 # for step function
 prob_win_good = 0.7 # what is the probability of high reward for a good deck
@@ -286,7 +286,7 @@ T = 12
 
 def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0.5):  
     
-    N = 10                #amount of participants
+    N = 2           #amount of participants
     strategy_list = []      #to store the strategy at the first free choice trial
     
     for i in range(N):   
@@ -294,7 +294,6 @@ def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0.5):
         C[0][1] = pref #preference for high reward
         #print(C)
         my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
-        
         strategy = run_active_inference_loop(my_agent, rewardcontext, T = T, equal = eq)  #on this line you can change between high or low reward context
         strategy_list.append(strategy)        
     
@@ -303,8 +302,11 @@ def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0.5):
 #-------------------------------------------------------------------------------
 
 def data(pref = 0.5, eq = True):
-
-    for i in range(10):
+     
+    Nrunningmodel = 2
+    for i in range(Nrunningmodel):
+        
+        print(i+1,'/',Nrunningmodel)
         if i == 0:
             Random, Exploit, Directed = [],[],[]
         
@@ -321,20 +323,20 @@ def data(pref = 0.5, eq = True):
     SdRandom = statistics.stdev(Random)
     SdExploit = statistics.stdev(Exploit)
     SdDirected = statistics.stdev(Directed)
-    
-    return [statistics.mean(Directed), statistics.mean(Exploit), statistics.mean(Random)]
+       
+    return [statistics.mean(Directed), statistics.mean(Exploit), statistics.mean(Random)], [SdDirected, SdExploit, SdRandom]
 
 #Unequal condition
-U1 = data(eq = False)
-U2 = data(pref = 0.6, eq = False)
-U3 = data(pref = 0.7, eq = False)
-U4 = data(pref = 0.8, eq = False)
+U1, SdU1 = data(eq = False)
+U2, SdU2 = data(pref = 0.6, eq = False)
+U3, SdU3 = data(pref = 0.7, eq = False)
+U4, SdU4 = data(pref = 0.8, eq = False)
 
 #Equal condition
-E1 = data(eq = True)
-E2 = data(pref = 0.6, eq = True)
-E3 = data(pref = 0.7, eq = True)
-E4 = data(pref = 0.8, eq = True)
+E1, SdE1 = data(eq = True)
+E2, SdE2 = data(pref = 0.6, eq = True)
+E3, SdE3 = data(pref = 0.7, eq = True)
+E4, SdE4 = data(pref = 0.8, eq = True)
 
 #------------------------------------------------------------------------------
 
@@ -346,6 +348,7 @@ def plot2x4(data = 0):
     fig.suptitle('')
     xb =[1,2,3]
     labels = ['Directed','Exploit','Random']
+    fs = 10
     blue = mpatches.Patch(color = 'blue', label = 'Directed')
     orange = mpatches.Patch(color = 'orange', label = 'Exploit')
     green = mpatches.Patch(color = 'green', label = 'Random')
@@ -354,30 +357,37 @@ def plot2x4(data = 0):
     for row in range(rows):
         for col in range(cols):
             if row == 0:
-                axs[row,col].bar(xb,data[col], color = color)
+                axs[row,col].bar(xb,data[0][col], color = color, yerr = data[1][col])
                 if col == 0:   
-                    axs[row,col].set_title('Unequal condition, preference for high reward = 0.5', fontsize = 6.5)   
+                    axs[row,col].set_title('Prob(High Rew) = 0.5', fontsize = fs)  
+                    axs[row,col].set_ylabel('Unequal condition', fontsize = fs)
                 if col == 1:
-                    axs[row,col].set_title('Unequal condition, preference for high reward = 0.6', fontsize = 6.5)
+                    axs[row,col].set_title('Prob(High Rew) = 0.6', fontsize = fs)
                 elif col == 2:
-                    axs[row,col].set_title('Unequal condition, preference for high reward = 0.7', fontsize = 6.5)
+                    axs[row,col].set_title('Prob(High Rew) = 0.7', fontsize = fs)
                 elif col == 3:
-                    axs[row,col].set_title('Unequal condition, preference for high reward = 0.8', fontsize = 6.5)
+                    axs[row,col].set_title('Prob(High Rew) = 0.8', fontsize = fs)
             else:
-                axs[row,col].bar(xb,data[col+4], color = color)
+                axs[row,col].bar(xb,data[0][col+4], color = color, yerr = data[1][col+4])
                 if col == 0:
-                    axs[row,col].set_title('Equal condition, preference for high reward = 0.5', fontsize = 6.5)
+                    axs[row,col].set_title('Prob(High Rew) = 0.5', fontsize = fs)
+                    axs[row,col].set_ylabel('Equal condition', fontsize = fs)
                 elif col == 1:
-                    axs[row,col].set_title('Equal condition, preference for high reward = 0.6', fontsize = 6.5)
+                    axs[row,col].set_title('Prob(High Rew) = 0.6', fontsize = fs)
                 elif col == 2:
-                    axs[row,col].set_title('Equal condition, preference for high reward = 0.7', fontsize = 6.5)
+                    axs[row,col].set_title('Prob(High Rew) = 0.7', fontsize = fs)
                 elif col == 3:
-                    axs[row,col].set_title('Equal condition, preference for high reward = 0.8', fontsize = 6.5)
-       
+                    axs[row,col].set_title('Prob(High Rew) = 0.8', fontsize = fs)
+                    
+            axs[row,col].set_ylim([0,1])
+            axs[row,col].set_xticks([])
+    text = "Prob(High Rew) refers to the preference \nfor a high reward outcome. A higher \nprobability means a higher preference \nfor high reward."   
+    print(text)
+    axs[row,col].text(-15,1.75, text)    
     fig.tight_layout()
     plt.subplot_tool()
-    axs[row,col].legend(colors, labels, loc = [-5,2],prop={'size': 9})
+    axs[row,col].legend(colors, labels, loc = [-5,2],prop={'size': 15})
     
-plot2x4(data = [U1, U2, U3, U4, E1, E2, E3, E4])
+plot2x4(data = [[U1, U2, U3, U4, E1, E2, E3, E4], [SdU1,SdU2,SdU3,SdU4,SdE1,SdE2,SdE3,SdE4]])
 
 #plot in 4x4 steken
