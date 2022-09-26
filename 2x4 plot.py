@@ -253,7 +253,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
             else:
                 strategy = 'Random'
       else:      
-          X = my_agent.sample_action()
+          my_agent.sample_action()
       
      ## FORCED CHOICE TRIALS
           #unequal condition
