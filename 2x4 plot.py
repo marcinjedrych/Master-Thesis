@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Last update: 9/09/2022
+Last update: 26/09/2022
 
-2x4 plot 
+2x4 plot in high reward and low reward context. 
 @author: Marcin Jedrych
 """
 
@@ -44,12 +44,12 @@ A = utils.obj_array( num_modalities )
 
 # reality low reward context (good or bad)
 Plow_GB1 = [0.3,0.7] 
-Plow_GB2 = [0.3,0.7]  #best deck
-Plow_GB3 = [0,1]  #worst deck
+Plow_GB2 = [0.3,0.7]
+Plow_GB3 = [0,1] 
 # reality high reward context 
 Phigh_GB1 = [0.3,0.7]
-Phigh_GB2 = [1,0]     #best deck
-Phigh_GB3 = [1,0] #worst deck
+Phigh_GB2 = [1,0]     
+Phigh_GB3 = [1,0] 
 
 # for step function
 prob_win_good = 0.7 # what is the probability of high reward for a good deck
@@ -286,7 +286,7 @@ T = 12
 
 def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0.5):  
     
-    N = 2           #amount of participants
+    N = 30         #amount of participants
     strategy_list = []      #to store the strategy at the first free choice trial
     
     for i in range(N):   
@@ -295,23 +295,25 @@ def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0.5):
         #print(C)
         my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
         strategy = run_active_inference_loop(my_agent, rewardcontext, T = T, equal = eq)  #on this line you can change between high or low reward context
+        #store the used strategies
         strategy_list.append(strategy)        
     
     return strategy_list,N
 
 #-------------------------------------------------------------------------------
 
-def data(pref = 0.5, eq = True):
+def data(pref = 0.5, eq = True, rewardcontext = env_low):
      
-    Nrunningmodel = 2
+    Nrunningmodel = 20
     for i in range(Nrunningmodel):
         
-        print(i+1,'/',Nrunningmodel)
+        #print(i+1,'/',Nrunningmodel)
         if i == 0:
             Random, Exploit, Directed = [],[],[]
         
-        strategy, N = runningmodel(3,4, eq = eq, rewardcontext = env_low, pref = pref ) 
+        strategy, N = runningmodel(3,4, eq = eq, rewardcontext = rewardcontext, pref = pref ) 
         
+        #get percentages of strategies
         random = strategy.count('Random')/N
         Random.append(random)
         exploit = strategy.count('Exploit')/N
@@ -319,13 +321,16 @@ def data(pref = 0.5, eq = True):
         directed = strategy.count('Direct')/N
         Directed.append(directed)
       
-    # to plot errorbars (nog doen)
+    # to plot errorbars
     SdRandom = statistics.stdev(Random)
     SdExploit = statistics.stdev(Exploit)
     SdDirected = statistics.stdev(Directed)
+    
+    print('X')
        
     return [statistics.mean(Directed), statistics.mean(Exploit), statistics.mean(Random)], [SdDirected, SdExploit, SdRandom]
 
+##LOW REWARD
 #Unequal condition
 U1, SdU1 = data(eq = False)
 U2, SdU2 = data(pref = 0.6, eq = False)
@@ -338,14 +343,32 @@ E2, SdE2 = data(pref = 0.6, eq = True)
 E3, SdE3 = data(pref = 0.7, eq = True)
 E4, SdE4 = data(pref = 0.8, eq = True)
 
+##HIGH REWARD
+#Unequal condition
+HU1, HSdU1 = data(eq = False, rewardcontext = env_high)
+HU2, HSdU2 = data(pref = 0.6, eq = False, rewardcontext = env_high)
+HU3, HSdU3 = data(pref = 0.7, eq = False, rewardcontext = env_high)
+HU4, HSdU4 = data(pref = 0.8, eq = False, rewardcontext = env_high)
+
+#Equal condition
+HE1, HSdE1 = data(eq = True, rewardcontext = env_high)
+HE2, HSdE2 = data(pref = 0.6, eq = True, rewardcontext = env_high)
+HE3, HSdE3 = data(pref = 0.7, eq = True, rewardcontext = env_high)
+HE4, HSdE4 = data(pref = 0.8, eq = True, rewardcontext = env_high)
+
 #------------------------------------------------------------------------------
 
 #function for 2x4 plot
-def plot2x4(data = 0):
+def plot2x4(data = 0, rewardcontext = env_low):
     fig, axs = plt.subplots(2,4)
     rows, cols = 2,4
     color = ['blue','orange','green']
-    fig.suptitle('')
+    
+    if rewardcontext == env_low:
+        fig.suptitle('Low Reward')
+    else:
+        fig.suptitle('High Reward')
+        
     xb =[1,2,3]
     labels = ['Directed','Exploit','Random']
     fs = 10
@@ -381,13 +404,15 @@ def plot2x4(data = 0):
                     
             axs[row,col].set_ylim([0,1])
             axs[row,col].set_xticks([])
+            
     text = "Prob(High Rew) refers to the preference \nfor a high reward outcome. A higher \nprobability means a higher preference \nfor high reward."   
-    print(text)
-    axs[row,col].text(-15,1.75, text)    
-    fig.tight_layout()
+    axs[row,col].text(-17,1.5, text)    
     plt.subplot_tool()
-    axs[row,col].legend(colors, labels, loc = [-5,2],prop={'size': 15})
-    
+    axs[row,col].legend(colors, labels, loc = [-5,1.9],prop={'size': 13})
+    fig.tight_layout()
+
+##LOW REWARD PLOT    
 plot2x4(data = [[U1, U2, U3, U4, E1, E2, E3, E4], [SdU1,SdU2,SdU3,SdU4,SdE1,SdE2,SdE3,SdE4]])
 
-#plot in 4x4 steken
+##HIGH REWARD PLOT
+plot2x4(data = [[HU1, HU2, HU3, HU4, HE1, HE2, HE3, HE4], [HSdU1,HSdU2,HSdU3,HSdU4,HSdE1,HSdE2,HSdE3,HSdE4]], rewardcontext = env_high)
