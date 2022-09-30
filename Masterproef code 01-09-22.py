@@ -264,7 +264,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
             else:
                 strategy = 'Random'
       else:      
-          X = my_agent.sample_action()
+          my_agent.sample_action()
       
      ## FORCED CHOICE TRIALS
           #unequal condition
@@ -306,7 +306,7 @@ T = 12
 ## function for choice plots and beliefs plot
 def plots(a,b, eq = True, rewardcontext = env_low, otherplots = True):  
     
-    N = 50                #amount of participants
+    N = 20               #amount of participants
     d = {}                  #for choices at each timepoint
     b1,b2,b3 = {},{},{}     #for beliefs at each timepoint
     strategy_list = []      #to store the strategy at the first free choice trial
