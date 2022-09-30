@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Last update: 26/09/2022
+Last update: 29/09/2022
 
 2x4 plot in high reward and low reward context. 
++ changes of storing exploitation action
 @author: Marcin Jedrych
 """
 
@@ -41,7 +42,6 @@ num_modalities = len(num_obs)
    
 A = utils.obj_array( num_modalities )
 
-
 # reality low reward context (good or bad)
 Plow_GB1 = [0.3,0.7] 
 Plow_GB2 = [0.3,0.7]
@@ -63,8 +63,6 @@ pH2_B = prob_win_bad #chance to see high reward if deck 2 is bad
 pH3_G = prob_win_good #chance to see high reward is deck 3 is good #??
 pH3_B = prob_win_bad #chance to see high reward if deck 3 is bad  #??
   
- 
-# function for agent
 # 3x2x2x2x4 = 96 cells
 A_reward = np.zeros((len(reward_obs_names), len(D1_names), len(D2_names),len(D3_names), len(choice_names)))
 
@@ -212,6 +210,7 @@ env_low = omgeving(rewardcontext = 'low') #low reward context omgeving
 ## making the active inference loop for each information condition (equal/unequal)
 
 forced = 6 #amount of forced choice trials
+T = 12 #amount of trials
 
 def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
 
@@ -222,6 +221,8 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
       print('Initial observation:',obs)
   chosendecks = [0] # (0 for start action)
   strategy = ''
+  valD1, valD2, valD3 = [],[],[]
+  exploitaction = 0
   
   for t in range(T):
       #print(obs)
@@ -233,8 +234,9 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
           print("Beliefs about the decks reward:", qs[0], qs[1], qs[2])
           print('EFE for each action:', efe)
           print('Q_PI:', q_pi)
+      #___________________________________________________________________________________
       
-     ## FREE CHOICE TRIALS
+      ## FREE CHOICE TRIALS
       if t > forced:
         chosen_action_id = my_agent.sample_action()   #agent choses action with less negative expected free energy
         movement_id = int(chosen_action_id[3])
@@ -244,24 +246,27 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
             print("movement id", movement_id)
             print("Chosen action:", choice_action)
             
-        #store strategy that is used in the first free choice trial for plot        ! [nog veranderen zodat dit altijd werkt en niet enkel als deck 2 het best is]
+        #store strategy that is used in the first free choice trial for plot
         if t == forced +1:
             if choice_action == 'ChD1' and equal is False:  #0 seen deck
                 strategy = 'Direct'
-            elif choice_action == 'ChD2':  #most rewarding deck
+            elif choice_action == exploitaction:  #deck that had the most 'high rewards' in forced trials
                 strategy = 'Exploit'
             else:
                 strategy = 'Random'
-      else:      
-          my_agent.sample_action()
-      
-     ## FORCED CHOICE TRIALS
+      #_____________________________________________________________________________________________
+          
+      else:  
+          ## FORCED CHOICE TRIALS
+          my_agent.sample_action()           #?
+          
           #unequal condition
           if equal == False:
                if t < (1/3)*forced:
                    choice_action = 'ChD3'
                elif t <= forced:
                    choice_action = 'ChD2'
+                   
           #equal info condition
           else: 
                if t < (1/3)*forced:
@@ -277,16 +282,46 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
           print(f'Action at time {t}: {choice_action}')
           print(f'Reward at time {t}: {obs_label[0]}')
           print(f'New observation:',choice_action,'&', reward_obs_names[obs[0]] + ' reward', '\n')
+      #______________________________________________________________________________________________
+      
+      ##storing reward value for each deck in forced choice trials
+      if choice_action == 'ChD1':
+          valD1.append(reward_obs_names[obs[0]])
+      elif choice_action == 'ChD2':
+          valD2.append(reward_obs_names[obs[0]])
+      else:
+          valD3.append(reward_obs_names[obs[0]])
+    
+      if t == forced:      
+          
+          #to get the most rewarding deck in the forced choice trials
+          #choosing this deck again will represent the exploitation action in the first free choice trial
+          D2high,D3high = valD2.count('High')/len(valD2),valD3.count('High')/len(valD3)
+          if len(valD1) != 0:
+              D1high = valD1.count('High')/len(valD1)
+          else:
+              D1high = 0        
+          print(D1high,D2high,D3high)
+          
+          highest = max(D1high,D2high,D3high)
+          if highest == D1high:
+              exploitaction = 'ChD1'
+          elif highest == D2high:
+              exploitaction = 'ChD2'
+          else:
+              exploitaction = 'ChD3'
+          
+          if verbose:
+              print('exploitation action:', exploitaction)
+
 
   return strategy  #returns data for plotting
-
-T = 12
 
 #--------------------------------------------------------------------------------
 
 def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0.5):  
     
-    N = 30         #amount of participants
+    N = 10         #amount of participants
     strategy_list = []      #to store the strategy at the first free choice trial
     
     for i in range(N):   
@@ -304,7 +339,7 @@ def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0.5):
 
 def data(pref = 0.5, eq = True, rewardcontext = env_low):
      
-    Nrunningmodel = 20
+    Nrunningmodel = 3
     for i in range(Nrunningmodel):
         
         #print(i+1,'/',Nrunningmodel)
@@ -329,6 +364,8 @@ def data(pref = 0.5, eq = True, rewardcontext = env_low):
     print('X')
        
     return [statistics.mean(Directed), statistics.mean(Exploit), statistics.mean(Random)], [SdDirected, SdExploit, SdRandom]
+
+#--------------------------------------------------------------------------------
 
 ##LOW REWARD
 #Unequal condition
@@ -407,9 +444,11 @@ def plot2x4(data = 0, rewardcontext = env_low):
             
     text = "Prob(High Rew) refers to the preference \nfor a high reward outcome. A higher \nprobability means a higher preference \nfor high reward."   
     axs[row,col].text(-17,1.5, text)    
-    plt.subplot_tool()
+    #plt.subplot_tool()
     axs[row,col].legend(colors, labels, loc = [-5,1.9],prop={'size': 13})
     fig.tight_layout()
+
+#-------------------------------------------------------------------------------------------
 
 ##LOW REWARD PLOT    
 plot2x4(data = [[U1, U2, U3, U4, E1, E2, E3, E4], [SdU1,SdU2,SdU3,SdU4,SdE1,SdE2,SdE3,SdE4]])
