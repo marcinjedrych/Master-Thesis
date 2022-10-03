@@ -1,20 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-Last update: 29/09/2022
+Last update: 3/10/2022
 
 2x4 plot in high reward and low reward context. 
 + changes of storing exploitation action
++deleting ambigues cases where there is an equal average reward for at least 2 decks in the forced choice trials
 @author: Marcin Jedrych
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-#import seaborn as sns
 from pymdp import utils
 from pymdp.agent import Agent
 import statistics
 verbose = False
+verbose2 = False
   
 D1_names = ['High','Low']
 D2_names = ['High','Low']
@@ -248,17 +249,20 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
             
         #store strategy that is used in the first free choice trial for plot
         if t == forced +1:
-            if choice_action == 'ChD1' and equal is False:  #0 seen deck
-                strategy = 'Direct'
-            elif choice_action == exploitaction:  #deck that had the most 'high rewards' in forced trials
-                strategy = 'Exploit'
+            if exploitaction is None:
+                strategy = 'None'
             else:
-                strategy = 'Random'
+                if choice_action == 'ChD1' and equal is False:  #0 seen deck
+                    strategy = 'Direct'
+                elif choice_action == exploitaction:  #deck that had the most 'high rewards' in forced trials
+                    strategy = 'Exploit'
+                else:
+                    strategy = 'Random'
       #_____________________________________________________________________________________________
           
       else:  
           ## FORCED CHOICE TRIALS
-          my_agent.sample_action()           #?
+          my_agent.sample_action() 
           
           #unequal condition
           if equal == False:
@@ -300,8 +304,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
           if len(valD1) != 0:
               D1high = valD1.count('High')/len(valD1)
           else:
-              D1high = 0        
-          print(D1high,D2high,D3high)
+              D1high = 0
           
           highest = max(D1high,D2high,D3high)
           if highest == D1high:
@@ -311,61 +314,70 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
           else:
               exploitaction = 'ChD3'
               
+          #if the average reward is equal for at least 2 options -> delete participant    
           if D1high in (D2high,D3high) or D2high == D3high:
               exploitaction = None
-          
-          if verbose:
-              print('exploitation action:', exploitaction)
-
-
+        
   return strategy  #returns data for plotting
 
 #--------------------------------------------------------------------------------
 
 def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0.5):  
     
-    N = 10         #amount of participants
+    N = 30         #amount of participants
     strategy_list = []      #to store the strategy at the first free choice trial
     
     for i in range(N):   
         #run the model
         C[0][1] = pref #preference for high reward
-        #print(C)
         my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
         strategy = run_active_inference_loop(my_agent, rewardcontext, T = T, equal = eq)  #on this line you can change between high or low reward context
-        #store the used strategies
-        strategy_list.append(strategy)        
-    
+        
+        #store the used strategies, don't store it if it's an ambiguous case
+        if strategy != 'None':
+            strategy_list.append(strategy)  
+        
     return strategy_list,N
 
 #-------------------------------------------------------------------------------
 
-def data(pref = 0.5, eq = True, rewardcontext = env_low):
-     
-    Nrunningmodel = 3
+def data(pref = 0.4, eq = True, rewardcontext = env_low):
+    
+    if rewardcontext == env_low:
+        rewc = 'LOW'
+    else:
+        rewc = 'HIGH'
+    print('REWARDCONTEXT:',rewc,', EQUAL:', eq,', PREF H:', pref,'\n') 
+        
+    Nrunningmodel = 4
     for i in range(Nrunningmodel):
         
-        #print(i+1,'/',Nrunningmodel)
         if i == 0:
             Random, Exploit, Directed = [],[],[]
         
         strategy, N = runningmodel(3,4, eq = eq, rewardcontext = rewardcontext, pref = pref ) 
+        N = len(strategy)
         
         #get percentages of strategies
-        random = strategy.count('Random')/N
-        Random.append(random)
-        exploit = strategy.count('Exploit')/N
-        Exploit.append(exploit)
-        directed = strategy.count('Direct')/N
-        Directed.append(directed)
+        if N != 0:
+            random = strategy.count('Random')/N
+            Random.append(random)
+            exploit = strategy.count('Exploit')/N
+            Exploit.append(exploit)
+            directed = strategy.count('Direct')/N
+            Directed.append(directed)
       
+        if verbose2:
+            print(directed, exploit, random, '\n') 
+    
     # to plot errorbars
     SdRandom = statistics.stdev(Random)
     SdExploit = statistics.stdev(Exploit)
     SdDirected = statistics.stdev(Directed)
-    
-    print('X')
-       
+
+    print('TOTAL:',statistics.mean(Directed), statistics.mean(Exploit), statistics.mean(Random))
+    print('_____________________\n')
+        
     return [statistics.mean(Directed), statistics.mean(Exploit), statistics.mean(Random)], [SdDirected, SdExploit, SdRandom]
 
 #--------------------------------------------------------------------------------
@@ -373,28 +385,28 @@ def data(pref = 0.5, eq = True, rewardcontext = env_low):
 ##LOW REWARD
 #Unequal condition
 U1, SdU1 = data(eq = False)
-U2, SdU2 = data(pref = 0.6, eq = False)
-U3, SdU3 = data(pref = 0.7, eq = False)
-U4, SdU4 = data(pref = 0.8, eq = False)
+U2, SdU2 = data(pref = 0.5, eq = False)
+U3, SdU3 = data(pref = 0.6, eq = False)
+U4, SdU4 = data(pref = 0.7, eq = False)
 
 #Equal condition
 E1, SdE1 = data(eq = True)
-E2, SdE2 = data(pref = 0.6, eq = True)
-E3, SdE3 = data(pref = 0.7, eq = True)
-E4, SdE4 = data(pref = 0.8, eq = True)
+E2, SdE2 = data(pref = 0.5, eq = True)
+E3, SdE3 = data(pref = 0.6, eq = True)
+E4, SdE4 = data(pref = 0.7, eq = True)
 
 ##HIGH REWARD
 #Unequal condition
 HU1, HSdU1 = data(eq = False, rewardcontext = env_high)
-HU2, HSdU2 = data(pref = 0.6, eq = False, rewardcontext = env_high)
-HU3, HSdU3 = data(pref = 0.7, eq = False, rewardcontext = env_high)
-HU4, HSdU4 = data(pref = 0.8, eq = False, rewardcontext = env_high)
+HU2, HSdU2 = data(pref = 0.5, eq = False, rewardcontext = env_high)
+HU3, HSdU3 = data(pref = 0.6, eq = False, rewardcontext = env_high)
+HU4, HSdU4 = data(pref = 0.7, eq = False, rewardcontext = env_high)
 
 #Equal condition
 HE1, HSdE1 = data(eq = True, rewardcontext = env_high)
-HE2, HSdE2 = data(pref = 0.6, eq = True, rewardcontext = env_high)
-HE3, HSdE3 = data(pref = 0.7, eq = True, rewardcontext = env_high)
-HE4, HSdE4 = data(pref = 0.8, eq = True, rewardcontext = env_high)
+HE2, HSdE2 = data(pref = 0.5, eq = True, rewardcontext = env_high)
+HE3, HSdE3 = data(pref = 0.6, eq = True, rewardcontext = env_high)
+HE4, HSdE4 = data(pref = 0.7, eq = True, rewardcontext = env_high)
 
 #------------------------------------------------------------------------------
 
@@ -422,32 +434,31 @@ def plot2x4(data = 0, rewardcontext = env_low):
             if row == 0:
                 axs[row,col].bar(xb,data[0][col], color = color, yerr = data[1][col])
                 if col == 0:   
-                    axs[row,col].set_title('Prob(High Rew) = 0.5', fontsize = fs)  
+                    axs[row,col].set_title('Prob(High Rew) = 0.4', fontsize = fs)  
                     axs[row,col].set_ylabel('Unequal condition', fontsize = fs)
                 if col == 1:
-                    axs[row,col].set_title('Prob(High Rew) = 0.6', fontsize = fs)
+                    axs[row,col].set_title('Prob(High Rew) = 0.5', fontsize = fs)
                 elif col == 2:
-                    axs[row,col].set_title('Prob(High Rew) = 0.7', fontsize = fs)
+                    axs[row,col].set_title('Prob(High Rew) = 0.6', fontsize = fs)
                 elif col == 3:
-                    axs[row,col].set_title('Prob(High Rew) = 0.8', fontsize = fs)
+                    axs[row,col].set_title('Prob(High Rew) = 0.7', fontsize = fs)
             else:
                 axs[row,col].bar(xb,data[0][col+4], color = color, yerr = data[1][col+4])
                 if col == 0:
-                    axs[row,col].set_title('Prob(High Rew) = 0.5', fontsize = fs)
+                    axs[row,col].set_title('Prob(High Rew) = 0.4', fontsize = fs)
                     axs[row,col].set_ylabel('Equal condition', fontsize = fs)
                 elif col == 1:
-                    axs[row,col].set_title('Prob(High Rew) = 0.6', fontsize = fs)
+                    axs[row,col].set_title('Prob(High Rew) = 0.5', fontsize = fs)
                 elif col == 2:
-                    axs[row,col].set_title('Prob(High Rew) = 0.7', fontsize = fs)
+                    axs[row,col].set_title('Prob(High Rew) = 0.6', fontsize = fs)
                 elif col == 3:
-                    axs[row,col].set_title('Prob(High Rew) = 0.8', fontsize = fs)
+                    axs[row,col].set_title('Prob(High Rew) = 0.7', fontsize = fs)
                     
             axs[row,col].set_ylim([0,1])
             axs[row,col].set_xticks([])
             
     text = "Prob(High Rew) refers to the preference \nfor a high reward outcome. A higher \nprobability means a higher preference \nfor high reward."   
     axs[row,col].text(-17,1.5, text)    
-    #plt.subplot_tool()
     axs[row,col].legend(colors, labels, loc = [-5,1.9],prop={'size': 13})
     fig.tight_layout()
 
