@@ -310,6 +310,9 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
               exploitaction = 'ChD2'
           else:
               exploitaction = 'ChD3'
+              
+          if D1high in (D2high,D3high) or D2high == D3high:
+              exploitaction = None
           
           if verbose:
               print('exploitation action:', exploitaction)
