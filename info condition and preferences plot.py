@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
-
 """
-Created on Fri Oct 14 16:10:09 2022
-Last update: 19/10/22
+Created on Tue Oct 25 15:45:13 2022
 
-Heat map
--reward context
--reward preference
--amount of directed exploration, exploitation and random exploration
+2x5
+Plot unequal/equal info condition and different preferences (reward context and horizon constant)
 
 @author: Lenovo
 """
@@ -46,6 +42,11 @@ num_modalities = len(num_obs)
 ## A matrix
    
 A = utils.obj_array( num_modalities )
+
+#reward context (good or bad)
+P_GB1 = [0.3,0.7] 
+P_GB2 = [0.5,0.5]
+P_GB3 = [0.5,0.5] 
 
 # for step function
 prob_win_good = 0.7 # what is the probability of high reward for a good deck
@@ -147,34 +148,14 @@ D[3] = D_choice
 
 #--------------------------------------------------------------------------------
 
-#function to define probabilities according to reward context
-def define_reward_context(rewc_number):
-    i,x= 0, 0
-    
-    while i != rewc_number:
-        i += 1
-        x +=0.1
-
-        P1 = [0.3,0.7]
-        P2 = [round(x, 1), round(1-x, 1)]
-        P3 = P2
-        
-    return P1,P2,P3
-
-#--------------------------------------------------------------------------------
-
 ## making the environment
     
 class omgeving(object):
 
-  def __init__(self, rewardcontext = 1):
-      
-    P_GB1,P_GB2,P_GB3 = define_reward_context(rewardcontext)
+  def __init__(self, rewardcontext = 'High'):
 
     self.Z = ['Good','Bad']
     
-    #high or low reward context
-
     self.D1 = self.Z[utils.sample(np.array(P_GB1))]
     self.D2 = self.Z[utils.sample(np.array(P_GB2))]
     self.D3 = self.Z[utils.sample(np.array(P_GB3))] # (good or bad)
@@ -212,6 +193,9 @@ class omgeving(object):
 
     return obs
 
+env = omgeving() #reward context omgeving
+
+
 #--------------------------------------------------------------------------------
 
 ## making the active inference loop for each information condition (equal/unequal)
@@ -219,10 +203,9 @@ class omgeving(object):
 forced = 6 #amount of forced choice trials
 T = 12 #amount of trials
 
-def run_active_inference_loop(my_agent, T = 5, equal = False, env_nr = 0):
- 
+def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
+
   #Initialize the first observation
-  my_env = omgeving(env_nr)
   obs_label = ["Null", "Start"]  # agent observes a `Null` reward, and seeing itself in the `Start` location
   obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
   if verbose:
@@ -327,18 +310,18 @@ def run_active_inference_loop(my_agent, T = 5, equal = False, env_nr = 0):
         
   return strategy  #returns data for plotting
 
-#---------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------
 
-def runningmodel(pref = 0.1, env_nr = 0, horizon = 1):  
+def runningmodel(a,b, eq = True, rewardcontext = env, pref = 0.2):  
     
-    N = 60         #amount of participants
+    N = 15         #amount of participants
     strategy_list = []      #to store the strategy at the first free choice trial
     
     for i in range(N):   
         #run the model
         C[0][1] = pref #preference for high reward
-        my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = horizon)
-        strategy = run_active_inference_loop(my_agent, T = T, env_nr = env_nr)  #on this line you can change between high or low reward context
+        my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
+        strategy = run_active_inference_loop(my_agent, rewardcontext, T = T, equal = eq)  #on this line you can change between high or low reward context
         
         #store the used strategies, don't store it if it's an ambiguous case
         if strategy != 'None':
@@ -346,134 +329,114 @@ def runningmodel(pref = 0.1, env_nr = 0, horizon = 1):
         
     return strategy_list,N
 
-#---------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
-def mean_percentage(pref = 0.1, env_nr = 0, horizon = 1):
+def data(pref = 0.3, eq = True, rewardcontext = env):
     
-    percentage_list1,percentage_list2,percentage_list3 = [],[],[]
-    for i in range(15):
-        x, n = runningmodel(pref = pref, env_nr = env_nr, horizon = horizon)
-        if len(x) == 0:
-            exploration_percentage,exploitation_percentage,random_percentage = 0,0,0
-        else:
-            exploration_percentage = x.count('Direct')/len(x)
-            exploitation_percentage = x.count('Exploit')/len(x)
-            random_percentage = x.count('Random')/len(x)
-        percentage_list1.append(exploration_percentage)
-        percentage_list2.append(exploitation_percentage)
-        percentage_list3.append(random_percentage)
+    print('EQUAL:', eq,', PREF H:', pref,'\n') 
         
-    mean_percentage1 = statistics.mean(percentage_list1)
-    mean_percentage2 = statistics.mean(percentage_list2)
-    mean_percentage3 = statistics.mean(percentage_list3)
-
-    return mean_percentage1, mean_percentage2, mean_percentage3
-
-#-----------------------------------------------------------------------------------
-
-def heatmap():
-    
-    rewardcontextname = ["Lowest reward context","","","","","","","","","Highest reward context"]
-    prefname = ["0.3","","0.5","","0.7","","0.9",""]
-
-    explorationdata,exploitationdata,randomdata = [],[],[]
-    Crow,Crow2,Crow3 = [],[],[]
-    for rewcontext in range(1,11):
-        for C in range(3,11):
-            env_nr = rewcontext
-            mean_explore,mean_exploit,mean_random = mean_percentage(pref= C/10, env_nr = env_nr)
-            Crow.append(mean_explore)
-            Crow2.append(mean_exploit)
-            Crow3.append(mean_random)
-            
-        explorationdata.append(Crow)
-        exploitationdata.append(Crow2)
-        randomdata.append(Crow3)
-        Crow,Crow2,Crow3 = [],[],[]
-        alldata = [explorationdata,exploitationdata,randomdata]
-    
-    def plot(data = explorationdata):
+    Nrunningmodel = 5
+    for i in range(Nrunningmodel):
         
-        if data == explorationdata:
-            color, title = 'Blues','Directed Exploration'
-        elif data == exploitationdata:
-            color,title = 'Reds', 'Exploitation'
-        else:
-            color,title = 'Greens','Random Exploration'
-
-        fig, ax = plt.subplots(1)
-        im = ax.imshow(data, cmap = color)
-        ax.set_title(title)
-        fig.colorbar(im)
-        im.set_clim(0,1)
-
-        ax.set_xticks(np.arange(len(prefname)))
-        ax.set_yticks(np.arange(len(rewardcontextname)))
-        ax.set_xticklabels(prefname)
-        ax.set_yticklabels(rewardcontextname)
-            
-        # Loop over data dimensions and create text annotations.
-        for i in range(len(rewardcontextname)):
-            for j in range(len(prefname)):
-                text = ax.text(j, i, round(data[i][j],2),ha="center", va="center", color="black")
-    
-        fig.tight_layout()
-        plt.show()     
-    
-    for data in alldata:
-        plot(data)
-#________________________________________________________________________________
-
-def heatmap2():
-    
-    horizonname = ["Horizon 1","","",""," Horizon 5","","","","","Horizon 10"]    
-    rewardcontextname = ["Lowest reward context","","","","","","","","","Highest reward context"]
-    
-    explorationdata,exploitationdata,randomdata = [],[],[]
-    Crow,Crow2,Crow3 = [],[],[]
-    for rewcontext in range(1,11):
-        for horizon in range(1,11):
-            env_nr = rewcontext
-            mean_explore,mean_exploit,mean_random = mean_percentage(pref= 0.5, env_nr = env_nr, horizon = horizon)
-            Crow.append(mean_explore)
-            Crow2.append(mean_exploit)
-            Crow3.append(mean_random)
-            
-        explorationdata.append(Crow)
-        exploitationdata.append(Crow2)
-        randomdata.append(Crow3)
-        Crow,Crow2,Crow3 = [],[],[]
-        alldata = [explorationdata,exploitationdata,randomdata]
-    
-    def plot(data = explorationdata):
+        if i == 0:
+            Random, Exploit, Directed = [],[],[]
         
-        if data == explorationdata:
-            color, title = 'Blues','Directed Exploration'
-        elif data == exploitationdata:
-            color,title = 'Reds', 'Exploitation'
-        else:
-            color,title = 'Greens','Random Exploration'
+        strategy, N = runningmodel(3,4, eq = eq, rewardcontext = rewardcontext, pref = pref ) 
+        N = len(strategy)
+        
+        #get percentages of strategies
+        if N != 0:
+            random = strategy.count('Random')/N
+            Random.append(random)
+            exploit = strategy.count('Exploit')/N
+            Exploit.append(exploit)
+            directed = strategy.count('Direct')/N
+            Directed.append(directed)
+      
+        if verbose2:
+            print(directed, exploit, random, '\n') 
+    
+    # to plot errorbars
+    SdRandom = statistics.stdev(Random)
+    SdExploit = statistics.stdev(Exploit)
+    SdDirected = statistics.stdev(Directed)
 
-        fig, ax = plt.subplots(1)
-        im = ax.imshow(data, cmap = color)
-        ax.set_title(title)
-        fig.colorbar(im)
+    print('TOTAL:',statistics.mean(Directed), statistics.mean(Exploit), statistics.mean(Random))
+    print('_____________________\n')
+        
+    return [statistics.mean(Directed), statistics.mean(Exploit), statistics.mean(Random)], [SdDirected, SdExploit, SdRandom]
 
-        ax.set_xticks(np.arange(len(horizonname)))
-        ax.set_yticks(np.arange(len(rewardcontextname)))
-        ax.set_xticklabels(horizonname)
-        ax.set_yticklabels(rewardcontextname)
+#--------------------------------------------------------------------------------
+
+#Unequal condition
+U1, SdU1 = data(eq = False, pref = 0.3)
+U2, SdU2 = data(pref = 0.4, eq = False)
+U3, SdU3 = data(pref = 0.5, eq = False)
+U4, SdU4 = data(pref = 0.6, eq = False)
+U5, SdU5 = data(pref = 0.7, eq = False)
+
+#Equal condition
+E1, SdE1 = data(eq = True)
+E2, SdE2 = data(pref = 0.4, eq = True)
+E3, SdE3 = data(pref = 0.5, eq = True)
+E4, SdE4 = data(pref = 0.6, eq = True)
+E5, SdE5 = data(pref = 0.7, eq = True)
+
+
+#------------------------------------------------------------------------------
+
+#function for 2x4 plot
+def plot2x4(data = 0, rewardcontext = env):
+    fig, axs = plt.subplots(2,5)
+    rows, cols = 2,5
+    color = ['blue','orange','green']
+        
+    xb =[1,2,3]
+    labels = ['Directed','Exploit','Random']
+    fs = 10
+    blue = mpatches.Patch(color = 'blue', label = 'Directed')
+    orange = mpatches.Patch(color = 'orange', label = 'Exploit')
+    green = mpatches.Patch(color = 'green', label = 'Random')
+    colors = [blue, orange, green]
+    
+    for row in range(rows):
+        for col in range(cols):
+            if row == 0:
+                axs[row,col].bar(xb,data[0][col], color = color, yerr = data[1][col])
+                if col == 0:   
+                    axs[row,col].set_title('Prob(High Rew) = 0.3', fontsize = fs)  
+                    axs[row,col].set_ylabel('Unequal condition', fontsize = fs)
+                if col == 1:
+                    axs[row,col].set_title('Prob(High Rew) = 0.4', fontsize = fs)
+                elif col == 2:
+                    axs[row,col].set_title('Prob(High Rew) = 0.5', fontsize = fs)
+                elif col == 3:
+                    axs[row,col].set_title('Prob(High Rew) = 0.6', fontsize = fs)
+                elif col == 4:
+                    axs[row,col].set_title('Prob(High Rew) = 0.7', fontsize = fs)
+            else:
+                axs[row,col].bar(xb,data[0][col+5], color = color, yerr = data[1][col+5])
+                if col == 0:
+                    axs[row,col].set_title('Prob(High Rew) = 0.3', fontsize = fs)
+                    axs[row,col].set_ylabel('Equal condition', fontsize = fs)
+                elif col == 1:
+                    axs[row,col].set_title('Prob(High Rew) = 0.4', fontsize = fs)
+                elif col == 2:
+                    axs[row,col].set_title('Prob(High Rew) = 0.5', fontsize = fs)
+                elif col == 3:
+                    axs[row,col].set_title('Prob(High Rew) = 0.6', fontsize = fs)
+                elif col == 4:
+                    axs[row,col].set_title('Prob(High Rew) = 0.7', fontsize = fs)
+                    
+            axs[row,col].set_ylim([0,1])
+            axs[row,col].set_xticks([])
             
-        # Loop over data dimensions and create text annotations.
-        for i in range(len(rewardcontextname)):
-            for j in range(len(horizonname)):
-                text = ax.text(j, i, round(data[i][j],2),ha="center", va="center", color="black")
-    
-        fig.tight_layout()
-        plt.show()     
-    
-    for data in alldata:
-        plot(data)
-#______________________________________________________________________________
+    text = "Prob(High Rew) refers to the preference \nfor a high reward outcome. A higher \nprobability means a higher preference \nfor high reward."   
+    axs[row,col].text(-17,1.5, text)    
+    axs[row,col].legend(colors, labels, loc = [-5,1.9],prop={'size': 13})
+    fig.tight_layout()
 
-heatmap()
+#-------------------------------------------------------------------------------------------
+
+## PLOT    
+plot2x4(data = [[U1, U2, U3, U4, U5, E1, E2, E3, E4, E5], [SdU1,SdU2,SdU3,SdU4,SdU5,SdE1,SdE2,SdE3,SdE4,SdE5]])

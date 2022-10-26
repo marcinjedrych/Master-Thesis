@@ -322,7 +322,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
 
 #--------------------------------------------------------------------------------
 
-def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0.5):  
+def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0.2):  
     
     N = 30         #amount of participants
     strategy_list = []      #to store the strategy at the first free choice trial
@@ -341,7 +341,7 @@ def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0.5):
 
 #-------------------------------------------------------------------------------
 
-def data(pref = 0.4, eq = True, rewardcontext = env_low):
+def data(pref = 0.3, eq = True, rewardcontext = env_low):
     
     if rewardcontext == env_low:
         rewc = 'LOW'
@@ -349,7 +349,7 @@ def data(pref = 0.4, eq = True, rewardcontext = env_low):
         rewc = 'HIGH'
     print('REWARDCONTEXT:',rewc,', EQUAL:', eq,', PREF H:', pref,'\n') 
         
-    Nrunningmodel = 4
+    Nrunningmodel = 10
     for i in range(Nrunningmodel):
         
         if i == 0:
@@ -384,36 +384,40 @@ def data(pref = 0.4, eq = True, rewardcontext = env_low):
 
 ##LOW REWARD
 #Unequal condition
-U1, SdU1 = data(eq = False)
-U2, SdU2 = data(pref = 0.5, eq = False)
-U3, SdU3 = data(pref = 0.6, eq = False)
-U4, SdU4 = data(pref = 0.7, eq = False)
+U1, SdU1 = data(eq = False, pref = 0.3)
+U2, SdU2 = data(pref = 0.4, eq = False)
+U3, SdU3 = data(pref = 0.5, eq = False)
+U4, SdU4 = data(pref = 0.6, eq = False)
+U5, SdU5 = data(pref = 0.7, eq = False)
 
 #Equal condition
 E1, SdE1 = data(eq = True)
-E2, SdE2 = data(pref = 0.5, eq = True)
-E3, SdE3 = data(pref = 0.6, eq = True)
-E4, SdE4 = data(pref = 0.7, eq = True)
+E2, SdE2 = data(pref = 0.4, eq = True)
+E3, SdE3 = data(pref = 0.5, eq = True)
+E4, SdE4 = data(pref = 0.6, eq = True)
+E5, SdE5 = data(pref = 0.7, eq = True)
 
 ##HIGH REWARD
 #Unequal condition
 HU1, HSdU1 = data(eq = False, rewardcontext = env_high)
-HU2, HSdU2 = data(pref = 0.5, eq = False, rewardcontext = env_high)
-HU3, HSdU3 = data(pref = 0.6, eq = False, rewardcontext = env_high)
-HU4, HSdU4 = data(pref = 0.7, eq = False, rewardcontext = env_high)
+HU2, HSdU2 = data(pref = 0.4, eq = False, rewardcontext = env_high)
+HU3, HSdU3 = data(pref = 0.5, eq = False, rewardcontext = env_high)
+HU4, HSdU4 = data(pref = 0.6, eq = False, rewardcontext = env_high)
+HU5, HSdU5 = data(pref = 0.7, eq = False, rewardcontext = env_high)
 
 #Equal condition
 HE1, HSdE1 = data(eq = True, rewardcontext = env_high)
-HE2, HSdE2 = data(pref = 0.5, eq = True, rewardcontext = env_high)
-HE3, HSdE3 = data(pref = 0.6, eq = True, rewardcontext = env_high)
-HE4, HSdE4 = data(pref = 0.7, eq = True, rewardcontext = env_high)
+HE2, HSdE2 = data(pref = 0.4, eq = True, rewardcontext = env_high)
+HE3, HSdE3 = data(pref = 0.5, eq = True, rewardcontext = env_high)
+HE4, HSdE4 = data(pref = 0.6, eq = True, rewardcontext = env_high)
+HE5, HSdE5 = data(pref = 0.7, eq = True, rewardcontext = env_high)
 
 #------------------------------------------------------------------------------
 
 #function for 2x4 plot
 def plot2x4(data = 0, rewardcontext = env_low):
-    fig, axs = plt.subplots(2,4)
-    rows, cols = 2,4
+    fig, axs = plt.subplots(2,5)
+    rows, cols = 2,5
     color = ['blue','orange','green']
     
     if rewardcontext == env_low:
@@ -434,24 +438,28 @@ def plot2x4(data = 0, rewardcontext = env_low):
             if row == 0:
                 axs[row,col].bar(xb,data[0][col], color = color, yerr = data[1][col])
                 if col == 0:   
-                    axs[row,col].set_title('Prob(High Rew) = 0.4', fontsize = fs)  
+                    axs[row,col].set_title('Prob(High Rew) = 0.3', fontsize = fs)  
                     axs[row,col].set_ylabel('Unequal condition', fontsize = fs)
                 if col == 1:
-                    axs[row,col].set_title('Prob(High Rew) = 0.5', fontsize = fs)
+                    axs[row,col].set_title('Prob(High Rew) = 0.4', fontsize = fs)
                 elif col == 2:
-                    axs[row,col].set_title('Prob(High Rew) = 0.6', fontsize = fs)
+                    axs[row,col].set_title('Prob(High Rew) = 0.5', fontsize = fs)
                 elif col == 3:
+                    axs[row,col].set_title('Prob(High Rew) = 0.6', fontsize = fs)
+                elif col == 4:
                     axs[row,col].set_title('Prob(High Rew) = 0.7', fontsize = fs)
             else:
-                axs[row,col].bar(xb,data[0][col+4], color = color, yerr = data[1][col+4])
+                axs[row,col].bar(xb,data[0][col+5], color = color, yerr = data[1][col+5])
                 if col == 0:
-                    axs[row,col].set_title('Prob(High Rew) = 0.4', fontsize = fs)
+                    axs[row,col].set_title('Prob(High Rew) = 0.3', fontsize = fs)
                     axs[row,col].set_ylabel('Equal condition', fontsize = fs)
                 elif col == 1:
-                    axs[row,col].set_title('Prob(High Rew) = 0.5', fontsize = fs)
+                    axs[row,col].set_title('Prob(High Rew) = 0.4', fontsize = fs)
                 elif col == 2:
-                    axs[row,col].set_title('Prob(High Rew) = 0.6', fontsize = fs)
+                    axs[row,col].set_title('Prob(High Rew) = 0.5', fontsize = fs)
                 elif col == 3:
+                    axs[row,col].set_title('Prob(High Rew) = 0.6', fontsize = fs)
+                elif col == 4:
                     axs[row,col].set_title('Prob(High Rew) = 0.7', fontsize = fs)
                     
             axs[row,col].set_ylim([0,1])
@@ -465,7 +473,7 @@ def plot2x4(data = 0, rewardcontext = env_low):
 #-------------------------------------------------------------------------------------------
 
 ##LOW REWARD PLOT    
-plot2x4(data = [[U1, U2, U3, U4, E1, E2, E3, E4], [SdU1,SdU2,SdU3,SdU4,SdE1,SdE2,SdE3,SdE4]])
+plot2x4(data = [[U1, U2, U3, U4, U5, E1, E2, E3, E4, E5], [SdU1,SdU2,SdU3,SdU4,SdU5,SdE1,SdE2,SdE3,SdE4,SdE5]])
 
 ##HIGH REWARD PLOT
-plot2x4(data = [[HU1, HU2, HU3, HU4, HE1, HE2, HE3, HE4], [HSdU1,HSdU2,HSdU3,HSdU4,HSdE1,HSdE2,HSdE3,HSdE4]], rewardcontext = env_high)
+plot2x4(data = [[HU1, HU2, HU3, HU4, HU5, HE1, HE2, HE3, HE4, HE5], [HSdU1,HSdU2,HSdU3,HSdU4,HSdU5,HSdE1,HSdE2,HSdE3,HSdE4,HSdE5]], rewardcontext = env_high)
