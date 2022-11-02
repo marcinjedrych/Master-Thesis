@@ -324,7 +324,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
 
 def runningmodel(a,b, eq = True, rewardcontext = env_low, pref = 0.2):  
     
-    N = 30         #amount of participants
+    N = 100         #amount of participants
     strategy_list = []      #to store the strategy at the first free choice trial
     
     for i in range(N):   
@@ -349,7 +349,7 @@ def data(pref = 0.3, eq = True, rewardcontext = env_low):
         rewc = 'HIGH'
     print('REWARDCONTEXT:',rewc,', EQUAL:', eq,', PREF H:', pref,'\n') 
         
-    Nrunningmodel = 10
+    Nrunningmodel = 20
     for i in range(Nrunningmodel):
         
         if i == 0:
@@ -418,7 +418,7 @@ HE5, HSdE5 = data(pref = 0.7, eq = True, rewardcontext = env_high)
 def plot2x4(data = 0, rewardcontext = env_low):
     fig, axs = plt.subplots(2,5)
     rows, cols = 2,5
-    color = ['blue','orange','green']
+    color = ['blue','red','green']
     
     if rewardcontext == env_low:
         fig.suptitle('Low Reward')
@@ -429,9 +429,9 @@ def plot2x4(data = 0, rewardcontext = env_low):
     labels = ['Directed','Exploit','Random']
     fs = 10
     blue = mpatches.Patch(color = 'blue', label = 'Directed')
-    orange = mpatches.Patch(color = 'orange', label = 'Exploit')
+    red = mpatches.Patch(color = 'red', label = 'Exploit')
     green = mpatches.Patch(color = 'green', label = 'Random')
-    colors = [blue, orange, green]
+    colors = [blue, red, green]
     
     for row in range(rows):
         for col in range(cols):
