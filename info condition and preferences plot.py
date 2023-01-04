@@ -371,14 +371,14 @@ def data(pref = 0.3, eq = True, rewardcontext = env):
 #Unequal condition
 U1, SdU1 = data(eq = False, pref = 0.3)
 U2, SdU2 = data(pref = 0.4, eq = False)
-U3, SdU3 = data(pref = 0.5, eq = False)
+U3, SdU3 = data(pref = 0.5, eq = False) #cte pref
 U4, SdU4 = data(pref = 0.6, eq = False)
 U5, SdU5 = data(pref = 0.7, eq = False)
 
 #Equal condition
 E1, SdE1 = data(eq = True)
 E2, SdE2 = data(pref = 0.4, eq = True)
-E3, SdE3 = data(pref = 0.5, eq = True)
+E3, SdE3 = data(pref = 0.5, eq = True) #cte pref
 E4, SdE4 = data(pref = 0.6, eq = True)
 E5, SdE5 = data(pref = 0.7, eq = True)
 
@@ -439,4 +439,4 @@ def plot2x4(data = 0, rewardcontext = env):
 #-------------------------------------------------------------------------------------------
 
 ## PLOT    
-plot2x4(data = [[U1, U2, U3, U4, U5, E1, E2, E3, E4, E5], [SdU1,SdU2,SdU3,SdU4,SdU5,SdE1,SdE2,SdE3,SdE4,SdE5]])
+#plot2x4(data = [[U1, U2, U3, U4, U5, E1, E2, E3, E4, E5], [SdU1,SdU2,SdU3,SdU4,SdU5,SdE1,SdE2,SdE3,SdE4,SdE5]])

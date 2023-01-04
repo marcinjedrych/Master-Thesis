@@ -6,7 +6,7 @@ from pymdp import utils
 from pymdp.agent import Agent
 import statistics
 verbose = False
-verbose2 = False
+verbose2 = True
   
 D1_names = ['High','Low']
 D2_names = ['High','Low']

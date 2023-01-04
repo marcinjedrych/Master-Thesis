@@ -332,7 +332,7 @@ def run_active_inference_loop(my_agent, my_env, T = T, equal = False):
 
 def plots(eq = False, rewardcontext = env_low, horizon = 1):  
     
-    N = 100               #amount of participants
+    N = 200               #amount of participants
     d = {}                  #for choices at each timepoint
     strategy_list = []      #to store the strategy at the first free choice trial
     
@@ -388,9 +388,9 @@ def plots(eq = False, rewardcontext = env_low, horizon = 1):
     return strategy_list,N
 
 strat_UQ_Low_Horizon,N = plots()
-strat_UQ_High_Horizon,N = plots(horizon = 12)
+strat_UQ_High_Horizon,N = plots(horizon = 10)
 strat_EQ_Low_Horizon,N = plots(eq = True)
-strat_EQ_High_Horizon,N = plots(eq = True, horizon = 12)
+strat_EQ_High_Horizon,N = plots(eq = True, horizon = 10)
 
 def barchart(x, N, title):
     No = x.count('None')
