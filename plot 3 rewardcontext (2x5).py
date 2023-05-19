@@ -115,7 +115,7 @@ B[3] = B_choice
 
 from pymdp.maths import softmax
 C = utils.obj_array_zeros([3, 4])
-C[0][1] = 0.8 #higher preference for high reward
+C[0][1] = 0.5 #higher preference for high reward
 C[0][2] = 0.3
 
 ## D matrix (high and low reward equaly likely for all decks in start.)
@@ -142,7 +142,7 @@ def define_reward_context(rewc_number):
         i += 1
         x +=0.1
 
-        P1 = [0.3,0.7]
+        P1 = [0.7,0.3]
         P2 = [round(x, 1), round(1-x, 1)]
         P3 = P2
         
@@ -320,7 +320,7 @@ def run_active_inference_loop(my_agent, T = 5, eq = True, env_nr = 0):
 
 def runningmodel(env_nr = 0, eq = True):  
     
-    N = 120        #amount of participants
+    N = 120     #amount of participants
     strategy_list = []      #to store the strategy at the first free choice trial
     
     for i in range(N):   
@@ -338,7 +338,7 @@ def runningmodel(env_nr = 0, eq = True):
 
 def data(eq = True, env_nr = 0):
         
-    Nrunningmodel = 20
+    Nrunningmodel = 30
     for i in range(Nrunningmodel):
         
         if i == 0:
@@ -387,7 +387,9 @@ E5, SdE5 = data(env_nr = 9, eq = True)
 
 #function for 2x4 plot
 def plot2x4(data = 0):
-    fig, axs = plt.subplots(2,5)
+    fig, axs = plt.subplots(2, 5, figsize=(15, 7))  # Increase the figure size to accommodate larger subplots
+    fig.subplots_adjust(wspace=0.4)  # Increase the horizontal spacing between subplots
+
     rows, cols = 2,5
     color = ['blue','red','green']
         
@@ -407,36 +409,41 @@ def plot2x4(data = 0):
                     axs[row,col].set_title('Reward context 1', fontsize = fs)  
                     axs[row,col].set_ylabel('Unequal condition', fontsize = fs)
                 if col == 1:
-                    axs[row,col].set_title('Reward context 3', fontsize = fs)
+                    axs[row,col].set_title('Reward context 2', fontsize = fs)
                 elif col == 2:
-                    axs[row,col].set_title('Reward context 5', fontsize = fs)
+                    axs[row,col].set_title('Reward context 3', fontsize = fs)
                 elif col == 3:
-                    axs[row,col].set_title('Reward context 7', fontsize = fs)
+                    axs[row,col].set_title('Reward context 4', fontsize = fs)
                 elif col == 4:
-                    axs[row,col].set_title('Reward context 9', fontsize = fs)
+                    axs[row,col].set_title('Reward context 5', fontsize = fs)
             else:
                 axs[row,col].bar(xb,data[0][col+5], color = color, yerr = data[1][col+5])
                 if col == 0:
                     axs[row,col].set_title('Reward context 1', fontsize = fs)
                     axs[row,col].set_ylabel('Equal condition', fontsize = fs)
                 elif col == 1:
-                    axs[row,col].set_title('Reward context 3', fontsize = fs)
+                    axs[row,col].set_title('Reward context 2', fontsize = fs)
                 elif col == 2:
-                    axs[row,col].set_title('Reward context 5', fontsize = fs)
+                    axs[row,col].set_title('Reward context 3', fontsize = fs)
                 elif col == 3:
-                    axs[row,col].set_title('Reward context 7', fontsize = fs)
+                    axs[row,col].set_title('Reward context 4', fontsize = fs)
                 elif col == 4:
-                    axs[row,col].set_title('Reward context 9', fontsize = fs)
+                    axs[row,col].set_title('Reward context 5', fontsize = fs)
                     
             axs[row,col].set_ylim([0,1])
             axs[row,col].set_xticks([])
             
     #text = "Prob(High Rew) refers to the preference \nfor a high reward outcome. A higher \nprobability means a higher preference \nfor high reward."   
-    #axs[row,col].text(-23,1.5, text)    
-    axs[row,col].legend(colors, labels, loc = [-6,1.9],prop={'size': 13})
-    fig.tight_layout()
+    #axs[row,col].text(-23,1.5, text)  
+    handles = [mpatches.Patch(color=c, label=l) for c, l in zip(color, labels)]  # Create separate handles for legend
+    legend = fig.legend(handles, labels, loc='upper left', bbox_to_anchor=(0, 1), fontsize=12)  # Position the legend on the left side
+    fig.tight_layout(rect=[0.1, 0, 0.9, 1])  # Adjust the layout to accommodate the legend
+
+    #axs[row,col].legend(colors, labels, loc = [-6,1.9],prop={'size': 13})
+    #fig.tight_layout()
 
 #-------------------------------------------------------------------------------------------
 
 ##REWARD PLOT    
 plot2x4(data = [[U1, U2, U3, U4, U5, E1, E2, E3, E4, E5], [SdU1,SdU2,SdU3,SdU4,SdU5,SdE1,SdE2,SdE3,SdE4,SdE5]])
+plt.savefig('reward_contextn1.pdf')

@@ -44,7 +44,7 @@ num_modalities = len(num_obs)
 A = utils.obj_array( num_modalities )
 
 # reality reward context (good or bad)
-P_GB1 = [0.3,0.7] 
+P_GB1 = [0.7,0.3] 
 P_GB2 = [0.5,0.5]
 P_GB3 = [0.5,0.5] 
 
@@ -128,7 +128,6 @@ B[3] = B_choice
 
 ## C matrix
 
-from pymdp.maths import softmax
 C = utils.obj_array_zeros([3, 4])
 C[0][1] = 0.6 #higher preference for high reward
 C[0][2] = 0.3
@@ -211,7 +210,6 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
   obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
   if verbose:
       print('Initial observation:',obs)
-  chosendecks = [0] # (0 for start action)
   strategy = ''
   valD1, valD2, valD3 = [],[],[]
   exploitaction = 0
@@ -315,7 +313,7 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
 
 def runningmodel(a,b, eq = True, pref = 0.2):  
     
-    N = 120        #amount of participants
+    N = 120   #amount of participants
     strategy_list = []      #to store the strategy at the first free choice trial
     
     for i in range(N):   
@@ -334,7 +332,7 @@ def runningmodel(a,b, eq = True, pref = 0.2):
 
 def data(pref = 0.3, eq = True): 
         
-    Nrunningmodel = 20
+    Nrunningmodel = 30
     for i in range(Nrunningmodel):
         
         if i == 0:
@@ -386,7 +384,9 @@ E5, SdE5 = data(pref = 0.8, eq = True)
 
 #function for 2x4 plot
 def plot2x4(data = 0):
-    fig, axs = plt.subplots(2,5)
+    fig, axs = plt.subplots(2, 5, figsize=(18, 7))  # Increase the figure size to accommodate larger subplots
+    fig.subplots_adjust(wspace=0.4)  # Increase the horizontal spacing between subplots
+
     rows, cols = 2,5
     color = ['blue','red','green']
         
@@ -431,11 +431,20 @@ def plot2x4(data = 0):
             axs[row,col].set_xticks([])
             
     #text = "Prob(High Rew) refers to the preference \nfor a high reward outcome. A higher \nprobability means a higher preference \nfor high reward."   
-    #axs[row,col].text(-23,1.5, text)    
-    axs[row,col].legend(colors, labels, loc = [-6,1.9],prop={'size': 13})
-    fig.tight_layout()
+    #axs[row,col].text(-23,1.5, text)
+
+    handles = [mpatches.Patch(color=c, label=l) for c, l in zip(color, labels)]  # Create separate handles for legend
+    legend = fig.legend(handles, labels, loc='upper left', bbox_to_anchor=(0, 1), fontsize=10)  # Position the legend on the left side
+    fig.tight_layout(rect=[0.1, 0, 0.9, 1])  # Adjust the layout to accommodate the legend
+
+    # Manually adjust the position of the legend
+    fig.subplots_adjust(left=0.1)  # Increase the left margin to create space for the legend on the left side
+
+    #axs[row,col].legend(colors, labels, loc = [-6,1.9],prop={'size': 13})
+    #fig.tight_layout()
 
 #-------------------------------------------------------------------------------------------
 
 ##REWARD PLOT    
 plot2x4(data = [[U1, U2, U3, U4, U5, E1, E2, E3, E4, E5], [SdU1,SdU2,SdU3,SdU4,SdU5,SdE1,SdE2,SdE3,SdE4,SdE5]])
+plt.savefig('preferences2.pdf')

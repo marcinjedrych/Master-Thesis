@@ -13,7 +13,6 @@ Heat map
 """
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 from pymdp import utils
 from pymdp.agent import Agent
 import statistics
@@ -124,8 +123,6 @@ for choice_i in range(len(choice_names)):
 B[3] = B_choice
 
 ## C matrix
-
-from pymdp.maths import softmax
 C = utils.obj_array_zeros([3, 4])
 C[0][1] = 0.6 #higher preference for high reward
 C[0][2] = 0.3
@@ -154,9 +151,10 @@ def define_reward_context(rewc_number):
         i += 1
         x +=0.1
 
-        P1 = [0.3,0.7]
+        P1 = [0.7,0.3]
         P2 = [round(x, 1), round(1-x, 1)]
         P3 = P2
+        print(P1,P2,P3)
         
     return P1,P2,P3
 
@@ -217,8 +215,9 @@ class omgeving(object):
 
 forced = 6 #amount of forced choice trials
 T = 12 #amount of trials
+equalinfocondition = False
 
-def run_active_inference_loop(my_agent, T = 5, equal = False, env_nr = 0):
+def run_active_inference_loop(my_agent, T = 5, equal = equalinfocondition, env_nr = 0):
  
   #Initialize the first observation
   my_env = omgeving(env_nr)
@@ -226,7 +225,6 @@ def run_active_inference_loop(my_agent, T = 5, equal = False, env_nr = 0):
   obs = [reward_obs_names.index(obs_label[0]), choice_obs_names.index(obs_label[1])]
   if verbose:
       print('Initial observation:',obs)
-  chosendecks = [0] # (0 for start action)
   strategy = ''
   valD1, valD2, valD3 = [],[],[]
   exploitaction = 0
@@ -330,7 +328,7 @@ def run_active_inference_loop(my_agent, T = 5, equal = False, env_nr = 0):
 
 def runningmodel(pref = 0.1, env_nr = 0, horizon = 1):  
     
-    N = 60         #amount of participants
+    N = 150     #amount of participants
     strategy_list = []      #to store the strategy at the first free choice trial
     
     for i in range(N):   
@@ -350,7 +348,7 @@ def runningmodel(pref = 0.1, env_nr = 0, horizon = 1):
 def mean_percentage(pref = 0.1, env_nr = 0, horizon = 1):
     
     percentage_list1,percentage_list2,percentage_list3 = [],[],[]
-    for i in range(15):
+    for i in range(40):
         x, n = runningmodel(pref = pref, env_nr = env_nr, horizon = horizon)
         if len(x) == 0:
             exploration_percentage,exploitation_percentage,random_percentage = 0,0,0
@@ -372,12 +370,13 @@ def mean_percentage(pref = 0.1, env_nr = 0, horizon = 1):
 
 def heatmap():
     
-    rewardcontextname = ["Lowest reward context","","","","","","","","","Highest reward context"]
+    rewardcontextname = ["Highest reward context","","","","","","","","","Lowest reward context"]
     prefname = ["0.3","","0.5","","0.7","","0.9",""]
 
     explorationdata,exploitationdata,randomdata = [],[],[]
     Crow,Crow2,Crow3 = [],[],[]
-    for rewcontext in range(1,11):
+    d = [10,9,8,7,6,5,4,3,2,1]
+    for rewcontext in d:
         for C in range(3,11):
             env_nr = rewcontext
             mean_explore,mean_exploit,mean_random = mean_percentage(pref= C/10, env_nr = env_nr)
@@ -391,88 +390,56 @@ def heatmap():
         Crow,Crow2,Crow3 = [],[],[]
         alldata = [explorationdata,exploitationdata,randomdata]
     
-    def plot(data = explorationdata):
-        
-        if data == explorationdata:
-            color, title = 'Blues','Directed Exploration'
-        elif data == exploitationdata:
-            color,title = 'Reds', 'Exploitation'
-        else:
-            color,title = 'Greens','Random Exploration'
 
+    def plot(data=explorationdata):
+        if data == explorationdata:
+            color, title = 'Blues', 'Directed Exploration'
+        elif data == exploitationdata:
+            color, title = 'Reds', 'Exploitation'
+        else:
+            color, title = 'Greens', 'Random Exploration'
+    
         fig, ax = plt.subplots(1)
-        im = ax.imshow(data, cmap = color)
+        im = ax.imshow(data, cmap=color, vmin=0)
         ax.set_title(title)
         fig.colorbar(im)
-        #im.set_clim(0,1)
 
+    
         ax.set_xticks(np.arange(len(prefname)))
         ax.set_yticks(np.arange(len(rewardcontextname)))
         ax.set_xticklabels(prefname)
         ax.set_yticklabels(rewardcontextname)
-            
+    
         # Loop over data dimensions and create text annotations.
         for i in range(len(rewardcontextname)):
             for j in range(len(prefname)):
-                text = ax.text(j, i, round(data[i][j],2),ha="center", va="center", color="black")
+                text = ax.text(
+                    j,
+                    i,
+                    round(data[i][j], 2),
+                    ha="center",
+                    va="center",
+                    color="black",
+                )
     
         fig.tight_layout()
-        plt.show()     
+        plt.show()
+ 
     
-    for data in alldata:
+    for index, data in enumerate(alldata):
+        print(data)
+        print(index)
         plot(data)
-#________________________________________________________________________________
-
-def heatmap2():
-    
-    horizonname = ["Horizon 1","","",""," Horizon 5","","","","","Horizon 10"]    
-    rewardcontextname = ["Lowest reward context","","","","","","","","","Highest reward context"]
-    
-    explorationdata,exploitationdata,randomdata = [],[],[]
-    Crow,Crow2,Crow3 = [],[],[]
-    for rewcontext in range(1,11):
-        for horizon in range(1,11):
-            env_nr = rewcontext
-            mean_explore,mean_exploit,mean_random = mean_percentage(pref= 0.5, env_nr = env_nr, horizon = horizon)
-            Crow.append(mean_explore)
-            Crow2.append(mean_exploit)
-            Crow3.append(mean_random)
-            
-        explorationdata.append(Crow)
-        exploitationdata.append(Crow2)
-        randomdata.append(Crow3)
-        Crow,Crow2,Crow3 = [],[],[]
-        alldata = [explorationdata,exploitationdata,randomdata]
-    
-    def plot(data = explorationdata):
-        
-        if data == explorationdata:
-            color, title = 'Blues','Directed Exploration'
-        elif data == exploitationdata:
-            color,title = 'Reds', 'Exploitation'
+        if index == 0:
+            plt.savefig('directed8.pdf')
+        elif index == 1:
+            plt.savefig('exploit8.pdf')
         else:
-            color,title = 'Greens','Random Exploration'
+            plt.savefig('random8.pdf')
 
-        fig, ax = plt.subplots(1)
-        im = ax.imshow(data, cmap = color)
-        ax.set_title(title)
-        fig.colorbar(im)
-
-        ax.set_xticks(np.arange(len(horizonname)))
-        ax.set_yticks(np.arange(len(rewardcontextname)))
-        ax.set_xticklabels(horizonname)
-        ax.set_yticklabels(rewardcontextname)
-            
-        # Loop over data dimensions and create text annotations.
-        for i in range(len(rewardcontextname)):
-            for j in range(len(horizonname)):
-                text = ax.text(j, i, round(data[i][j],2),ha="center", va="center", color="black")
-    
-        fig.tight_layout()
-        plt.show()     
-    
-    for data in alldata:
-        plot(data)
 #______________________________________________________________________________
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 heatmap()

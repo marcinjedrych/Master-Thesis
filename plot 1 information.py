@@ -13,10 +13,13 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from pymdp import utils
 from pymdp.agent import Agent
+import random
 import statistics
 verbose = False
 verbose2 = True
-  
+
+random.seed()
+
 D1_names = ['High','Low']
 D2_names = ['High','Low']
 D3_names = ['High', 'Low']
@@ -44,7 +47,7 @@ num_modalities = len(num_obs)
 A = utils.obj_array( num_modalities )
 
 #reward context (good or bad)
-P_GB1 = [0.3,0.7] 
+P_GB1 = [0.7,0.3] 
 P_GB2 = [0.5,0.5]
 P_GB3 = [0.5,0.5] 
 
@@ -129,7 +132,7 @@ B[3] = B_choice
 
 from pymdp.maths import softmax
 C = utils.obj_array_zeros([3, 4])
-C[0][1] = 0.6 #higher preference for high reward
+C[0][1] = 0.55 #higher preference for high reward
 C[0][2] = 0.3
 
 ## D matrix (high and low reward equaly likely for all decks in start.)
@@ -193,7 +196,7 @@ class omgeving(object):
 
     return obs
 
-env = omgeving() #reward context omgeving
+
 
 
 #--------------------------------------------------------------------------------
@@ -312,14 +315,15 @@ def run_active_inference_loop(my_agent, my_env, T = 5, equal = True):
 
 #--------------------------------------------------------------------------------
 
-def runningmodel(a,b, eq = True, rewardcontext = env, pref = 0.2):  
+def runningmodel(a,b, eq = True, pref = 0.2):  
     
-    N = 100        #amount of participants
+    N = 400        #amount of participants
     strategy_list = []      #to store the strategy at the first free choice trial
     
     for i in range(N):   
         #run the model
         C[0][1] = pref #preference for high reward
+        rewardcontext = omgeving()
         my_agent = Agent(A = A, B = B, C = C, D = D, inference_horizon = 1)
         strategy = run_active_inference_loop(my_agent, rewardcontext, T = T, equal = eq)  #on this line you can change between high or low reward context
         
@@ -331,17 +335,17 @@ def runningmodel(a,b, eq = True, rewardcontext = env, pref = 0.2):
 
 #-------------------------------------------------------------------------------
 
-def data(pref = 0.3, eq = True, rewardcontext = env):
+def data(pref = 0.5, eq = True):
     
     print('EQUAL:', eq,', PREF H:', pref,'\n') 
         
-    Nrunningmodel = 20
+    Nrunningmodel = 30
     for i in range(Nrunningmodel):
         
         if i == 0:
             Random, Exploit, Directed = [],[],[]
         
-        strategy, N = runningmodel(3,4, eq = eq, rewardcontext = rewardcontext, pref = pref ) 
+        strategy, N = runningmodel(3,4, eq = eq, pref = pref ) 
         N = len(strategy)
         
         #get percentages of strategies
@@ -408,3 +412,4 @@ def plot1x2(data = 0):
             plt.xticks([])
             
 plot1x2(data = [[U,E], [SdU,SdE]])
+plt.savefig('info_condition4.pdf')
